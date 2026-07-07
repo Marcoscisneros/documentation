@@ -1,7 +1,7 @@
 ---
 title: "GET /ingredients/inventory — Check Inventory Levels"
 sidebarTitle: "Inventory"
-description: "GET /ingredients/inventory returns current stock levels for all ingredients, including low-stock flags and last restock timestamps."
+description: "Check current stock levels for all ingredients, including low-stock flags and restock timestamps. Supports filtering to only low-stock items."
 ---
 
 Use this endpoint to check the current stock levels across all ingredients in your facility. Each record tells you how much of an ingredient is on hand, whether it has fallen below your configured low-stock threshold, and when it was last restocked. This is the recommended pre-flight check before starting a large production run.
@@ -80,7 +80,7 @@ curl 'https://api.pizzeriaco.com/v1/ingredients/inventory?low_stock_only=true' \
   "inventory": [
     {
       "ingredient_id": "ing_01hx6ru",
-      "name": "mozzarella",
+      "name": "Mozzarella",
       "unit": "kg",
       "quantity_available": 42.0,
       "low_stock_threshold": 50,

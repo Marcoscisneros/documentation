@@ -1,5 +1,5 @@
 ---
-title: "Welcome to the Pizzeria Co API Docs"
+title: "Pizzeria Co API: Industrial Pizza Production Platform"
 sidebarTitle: "Introduction"
 description: "Automate and control every stage of your pizza production line with the Pizzeria Co REST API — from recipe management to real-time machine monitoring."
 ---
@@ -26,22 +26,22 @@ Welcome to Pizzeria Co's developer documentation. Whether you're building an aut
 The Pizzeria Co API gives you complete programmatic access to your factory's production infrastructure. Here are the key capabilities at your fingertips:
 
 <CardGroup cols={2}>
-  <Card title="Control Factory Machinery" icon="industry">
+  <Card title="Control Factory Machinery" icon="industry" href="/concepts/machines">
     Send commands to individual machines, check their status, and respond to state changes in real time — all over a simple REST interface.
   </Card>
-  <Card title="Manage Recipes" icon="pizza-slice">
+  <Card title="Manage Recipes" icon="pizza-slice" href="/concepts/recipes">
     Create, update, and delete pizza recipes with full control over dough weight, sauce type, toppings, bake temperature, and duration.
   </Card>
-  <Card title="Orchestrate Production Runs" icon="play">
-    Start, monitor, pause, and cancel production jobs. Assign specific machines to each run and track output quantities as they complete.
+  <Card title="Orchestrate Production Runs" icon="play" href="/concepts/production-runs">
+    Start, monitor, and cancel production jobs. Assign specific machines to each run and track output quantities as they complete.
   </Card>
-  <Card title="Monitor Machine Status" icon="chart-line">
-    Poll or stream real-time status updates from every machine on your production line — including idle, running, maintenance, and error states.
+  <Card title="Monitor Machine Status" icon="chart-line" href="/guides/monitor-machines">
+    Poll real-time status updates from every machine on your production line — including idle, running, maintenance, and error states.
   </Card>
-  <Card title="Track Ingredient Inventory" icon="boxes-stacked">
+  <Card title="Track Ingredient Inventory" icon="boxes-stacked" href="/concepts/ingredients">
     Query current stock levels for every ingredient, set low-stock thresholds, and integrate reorder alerts into your existing supply chain tools.
   </Card>
-  <Card title="Secure API Key Auth" icon="shield-halved">
+  <Card title="Secure API Key Auth" icon="shield-halved" href="/authentication">
     All API requests are authenticated with long-lived API keys you generate from your dashboard — no OAuth flows or token refreshes required.
   </Card>
 </CardGroup>

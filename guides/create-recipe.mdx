@@ -1,7 +1,7 @@
 ---
-title: "Create and Manage Pizza Recipes via the API"
+title: "Create and Manage Pizza Recipes with the Pizzeria Co API"
 sidebarTitle: "Create Recipe"
-description: "Step-by-step guide to creating, updating, and deleting pizza recipes in Pizzeria Co using the REST API."
+description: "Learn how to create, retrieve, update, and delete pizza recipes using the Pizzeria Co REST API to drive consistent factory production runs."
 ---
 
 Recipes are the foundation of every production run in Pizzeria Co. A recipe defines everything the factory machinery needs to produce a consistent pizza at scale — from dough weight and sauce type to baking temperature and duration. Once a recipe exists in the system, you can reference it across unlimited production runs and update it independently as your specifications evolve.
@@ -82,12 +82,12 @@ Recipes are the foundation of every production run in Pizzeria Co. A recipe defi
   </Step>
 
   <Step title="Update a recipe">
-    Send a `PUT` request to `/recipes/{id}` with only the fields you want to change. You do not need to resend the full recipe body — any omitted fields retain their current values.
+    Send a `PATCH` request to `/recipes/{id}` with only the fields you want to change. Any omitted fields retain their current values.
 
     <CodeGroup>
 
     ```bash cURL
-    curl -X PUT https://api.pizzeriaco.com/v1/recipes/rec_01hx4mn \
+    curl -X PATCH https://api.pizzeriaco.com/v1/recipes/rec_01hx4mn \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{"bake_duration_seconds": 220}'

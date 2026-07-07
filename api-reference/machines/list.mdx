@@ -1,5 +1,5 @@
 ---
-title: "GET /machines — List All Factory Machines"
+title: "GET /machines: List All Registered Factory Machines"
 sidebarTitle: "List Machines"
 description: "GET /machines returns a paginated list of all registered machines, their types, statuses, and capacities. Supports filtering by status."
 ---
@@ -19,7 +19,7 @@ GET https://api.pizzeriaco.com/v1/machines
 </ParamField>
 
 <ParamField query="type" type="string">
-  Filter machines by type, such as `dough_mixer`, `oven`, or `sauce_dispenser`.
+  Filter machines by type. Accepted values: `dough_mixer`, `sauce_applicator`, `topping_station`, `oven`, `cutting_station`, `packaging_station`.
 </ParamField>
 
 <ParamField query="limit" type="integer" default={20}>

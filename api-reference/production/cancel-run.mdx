@@ -1,7 +1,7 @@
 ---
-title: "POST /production/runs/{id}/cancel — Cancel a Run"
+title: "Cancel Production Run — POST /production/runs/{id}/cancel"
 sidebarTitle: "Cancel Run"
-description: "POST /production/runs/{id}/cancel stops an active production run and sets its status to cancelled. Already-produced pizzas are not reversed."
+description: "Stop an active production run immediately and set its status to cancelled. Pizzas already produced are preserved in the quantity_completed count."
 ---
 
 Use this endpoint to immediately stop an active production run. The assigned machines halt processing, the run status is set to `cancelled`, and any pizzas already produced are preserved in `quantity_completed`. This is useful when you need to free up machines for a higher-priority run or respond to an operational change on the floor.

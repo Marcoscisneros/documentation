@@ -1,7 +1,7 @@
 ---
 title: "Production Runs: Orchestrate Your Pizza Manufacturing"
 sidebarTitle: "Production Runs"
-description: "Learn how production runs in Pizzeria Co tie a recipe, quantity, and set of machines together into a trackable manufacturing job."
+description: "Learn how production runs in Pizzeria Co tie a recipe, a target quantity, and a set of machines together into a single trackable manufacturing job."
 ---
 
 A production run is the central job object in Pizzeria Co. It binds a recipe, a target quantity, and one or more machines into a single trackable unit of work. When you create a run, the platform validates that all assigned machines are available, locks in the current recipe version, and begins coordinating the production sequence automatically. You can monitor progress in real time, pause or cancel a run when needed, and inspect a full record of what was produced once the run completes.
@@ -71,3 +71,150 @@ Each production run moves through a defined set of statuses from creation to com
 <Note>
   Poll `quantity_completed` against `quantity` to track run progress. For example, `quantity_completed / quantity * 100` gives you a straightforward percentage. If you need real-time updates without polling, subscribe to the `production_run.progress` webhook event instead.
 </Note>
+
+## API endpoints
+
+Use the following endpoints to create, inspect, list, and cancel production runs.
+
+### Start a production run
+
+Create a new production run by supplying a recipe ID, target quantity, and the IDs of the machines to assign. All specified machines must be in `idle` status.
+
+```bash
+POST https://api.pizzeriaco.com/v1/production/runs
+```
+
+**Example request body**
+
+```json
+{
+  "recipe_id": "rec_01hx4mn",
+  "quantity": 500,
+  "machine_ids": [
+    "mch_01hx3k9",
+    "mch_01hx3ka",
+    "mch_01hx3kb",
+    "mch_01hx3kc"
+  ]
+}
+```
+
+**Example response**
+
+```json
+{
+  "id": "run_01hx5qp",
+  "recipe_id": "rec_01hx4mn",
+  "recipe_version": 3,
+  "quantity": 500,
+  "quantity_completed": 0,
+  "machine_ids": [
+    "mch_01hx3k9",
+    "mch_01hx3ka",
+    "mch_01hx3kb",
+    "mch_01hx3kc"
+  ],
+  "status": "queued",
+  "started_at": null,
+  "completed_at": null,
+  "error": null
+}
+```
+
+### Get a production run
+
+Retrieve the current state of a single production run by its ID.
+
+```bash
+GET https://api.pizzeriaco.com/v1/production/runs/{run_id}
+```
+
+**Example response**
+
+```json
+{
+  "id": "run_01hx5qp",
+  "recipe_id": "rec_01hx4mn",
+  "recipe_version": 3,
+  "quantity": 500,
+  "quantity_completed": 214,
+  "machine_ids": [
+    "mch_01hx3k9",
+    "mch_01hx3ka",
+    "mch_01hx3kb",
+    "mch_01hx3kc"
+  ],
+  "status": "running",
+  "started_at": "2024-12-01T06:00:00Z",
+  "completed_at": null,
+  "error": null
+}
+```
+
+### List production runs
+
+Retrieve a paginated list of all production runs. Filter by `status` to narrow results — for example, `?status=running` returns only active runs.
+
+```bash
+GET https://api.pizzeriaco.com/v1/production/runs
+```
+
+**Example response**
+
+```json
+{
+  "data": [
+    {
+      "id": "run_01hx5qp",
+      "recipe_id": "rec_01hx4mn",
+      "recipe_version": 3,
+      "quantity": 500,
+      "quantity_completed": 214,
+      "status": "running",
+      "started_at": "2024-12-01T06:00:00Z",
+      "completed_at": null,
+      "error": null
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 1
+  }
+}
+```
+
+### Cancel a production run
+
+Cancel an in-progress or queued run. Only runs in `queued`, `running`, or `paused` status can be cancelled. The run transitions to `cancelled` and all assigned machines return to `idle`.
+
+```bash
+POST https://api.pizzeriaco.com/v1/production/runs/{run_id}/cancel
+```
+
+**Example response**
+
+```json
+{
+  "id": "run_01hx5qp",
+  "status": "cancelled",
+  "completed_at": "2024-12-01T07:45:00Z"
+}
+```
+
+<Warning>
+  Cancelling a run that is already `running` does not reverse any production already completed. The `quantity_completed` value reflects how many pizzas were finished before cancellation.
+</Warning>
+
+For full request and response schemas, see the [Production API reference](/api-reference/production/start-run).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Start a production run" icon="circle-play" href="/guides/start-production">
+    Step-by-step guide to configuring and launching your first run.
+  </Card>
+  <Card title="Monitor machines" icon="gauge" href="/guides/monitor-machines">
+    Track machine status and catch errors before they stop your line.
+  </Card>
+</CardGroup>

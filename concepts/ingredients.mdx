@@ -28,7 +28,7 @@ The ingredient object describes a material registered in your workspace.
 
 ## Inventory record fields
 
-Inventory levels are returned separately from ingredient metadata via `GET /ingredients/inventory`. Each record pairs an ingredient with its current stock information.
+Inventory levels are returned separately from ingredient metadata via the inventory endpoint. Each record pairs an ingredient with its current stock information.
 
 | Field | Type | Description |
 |---|---|---|
@@ -51,9 +51,104 @@ Inventory levels are returned separately from ingredient metadata via `GET /ingr
 ```
 
 <Warning>
-  Inventory levels are decremented in real time as production runs consume ingredients. If a run is cancelled, the platform does **not** automatically restore the quantities already consumed before cancellation. Reconcile your inventory manually or via your own restocking workflow after cancelling a run that was partially underway.
+  Inventory levels are decremented in real time as production runs consume ingredients. If a run is cancelled, the platform does **not** automatically restore the quantities already consumed before cancellation. Reconcile your inventory manually after cancelling a run that was partially underway.
 </Warning>
 
 <Tip>
-  Set `low_stock_threshold` generously — high enough to give your team time to reorder and receive stock before the ingredient runs out entirely. A good starting point is at least one full production run's worth of consumption above zero. You can update thresholds at any time via `PATCH /ingredients/{id}/inventory`.
+  Set `low_stock_threshold` generously — high enough to give your team time to reorder and receive stock before the ingredient runs out entirely. A good starting point is at least one full production run's worth of consumption above zero.
 </Tip>
+
+## API endpoints
+
+Use the following endpoints to browse your ingredient catalog and check current inventory levels.
+
+### List all ingredients
+
+Retrieve a paginated list of all ingredients registered in your workspace. Use the optional `category` query parameter to filter by production stage.
+
+```bash
+GET https://api.pizzeriaco.com/v1/ingredients
+```
+
+**Example response**
+
+```json
+{
+  "data": [
+    {
+      "id": "ing_01hx6rs",
+      "name": "mozzarella",
+      "unit": "kg",
+      "category": "topping"
+    },
+    {
+      "id": "ing_01hx6rt",
+      "name": "00_flour",
+      "unit": "kg",
+      "category": "dough"
+    },
+    {
+      "id": "ing_01hx6ru",
+      "name": "tomato_sauce",
+      "unit": "liters",
+      "category": "sauce"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 3
+  }
+}
+```
+
+### Get inventory levels
+
+Retrieve current stock levels for all ingredients. Each record in the response corresponds to one ingredient and includes its available quantity, low-stock threshold, and last restock timestamp.
+
+```bash
+GET https://api.pizzeriaco.com/v1/ingredients/inventory
+```
+
+**Example response**
+
+```json
+{
+  "data": [
+    {
+      "ingredient_id": "ing_01hx6rs",
+      "quantity_available": 38.5,
+      "low_stock_threshold": 50.0,
+      "is_low_stock": true,
+      "last_restocked_at": "2024-11-28T07:15:00Z"
+    },
+    {
+      "ingredient_id": "ing_01hx6rt",
+      "quantity_available": 420.0,
+      "low_stock_threshold": 100.0,
+      "is_low_stock": false,
+      "last_restocked_at": "2024-11-30T08:00:00Z"
+    },
+    {
+      "ingredient_id": "ing_01hx6ru",
+      "quantity_available": 15.0,
+      "low_stock_threshold": 20.0,
+      "is_low_stock": true,
+      "last_restocked_at": "2024-11-25T11:30:00Z"
+    }
+  ]
+}
+```
+
+For full request and response schemas, see the [Ingredients API reference](/api-reference/ingredients/list).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Manage ingredients" icon="boxes-stacked" href="/guides/manage-ingredients">
+    Learn how to register ingredients, set thresholds, and track consumption.
+  </Card>
+  <Card title="Start a production run" icon="circle-play" href="/guides/start-production">
+    Ensure your ingredient stocks are ready before launching a run.
+  </Card>
+</CardGroup>

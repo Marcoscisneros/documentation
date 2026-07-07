@@ -1,7 +1,7 @@
 ---
 title: "GET /production/runs/{id} — Get Production Run Status"
 sidebarTitle: "Get Run"
-description: "GET /production/runs/{id} returns the current status, progress, and details of a specific production run by its ID."
+description: "Retrieve the full details and current status of a specific production run by ID, including progress, assigned machines, and any error information."
 ---
 
 Use this endpoint to retrieve the full details of a single production run — including its current status, how many pizzas have been completed, and any error information. This is the primary way to track the progress of an active run from your application.
@@ -68,7 +68,9 @@ To track an active run, poll this endpoint every **5–10 seconds**. Calculate c
 progress = quantity_completed / quantity * 100
 ```
 
-The run is finished when `status` is `completed`, `failed`, or `cancelled`. Once the status reaches a terminal state, stop polling.
+<Tip>
+  The run is finished when `status` is `completed`, `failed`, or `cancelled`. Once the run reaches a terminal state, stop polling and check `quantity_completed` for the final count.
+</Tip>
 
 ## Code Example
 

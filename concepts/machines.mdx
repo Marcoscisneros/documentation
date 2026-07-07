@@ -1,5 +1,5 @@
 ---
-title: "Understanding Pizza Factory Machines in Pizzeria Co"
+title: "Pizza Factory Machines: Types, Status, and the API"
 sidebarTitle: "Machines"
 description: "Learn how Pizzeria Co models physical factory machines, their types, status lifecycle, and how to interact with them through the API."
 ---
@@ -66,5 +66,118 @@ Every machine has a `status` field that reflects its current operational state. 
 ```
 
 <Tip>
-  Use the `location` field to encode your factory floor topology — for example, `line-a`, `line-b-oven-1`, or `dispatch-west`. Consistent location labels make it easy to filter machines by production line using the `GET /machines?location=` query parameter and to spot bottlenecks when reviewing run assignments.
+  Use the `location` field to encode your factory floor topology — for example, `line-a`, `line-b-oven-1`, or `dispatch-west`. Consistent location labels make it easy to filter machines by production line using the `location` query parameter and to spot bottlenecks when reviewing run assignments.
 </Tip>
+
+## API endpoints
+
+Use the following endpoints to list machines, inspect a specific machine, and control machine state.
+
+### List all machines
+
+Retrieve a paginated list of all machines in your workspace. Use the optional `location` and `status` query parameters to filter results.
+
+```bash
+GET https://api.pizzeriaco.com/v1/machines
+```
+
+**Example response**
+
+```json
+{
+  "data": [
+    {
+      "id": "mch_01hx3k9",
+      "name": "Mixer Alpha",
+      "type": "dough_mixer",
+      "status": "idle",
+      "capacity_kg": 120.0,
+      "location": "line-a-north",
+      "last_maintenance_at": "2024-11-15T08:30:00Z"
+    },
+    {
+      "id": "mch_01hx3ka",
+      "name": "Oven One",
+      "type": "oven",
+      "status": "running",
+      "capacity_kg": 200.0,
+      "location": "line-a-south",
+      "last_maintenance_at": "2024-10-30T14:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 2
+  }
+}
+```
+
+### Get a machine
+
+Retrieve a single machine by its ID.
+
+```bash
+GET https://api.pizzeriaco.com/v1/machines/{machine_id}
+```
+
+**Example response**
+
+```json
+{
+  "id": "mch_01hx3k9",
+  "name": "Mixer Alpha",
+  "type": "dough_mixer",
+  "status": "idle",
+  "capacity_kg": 120.0,
+  "location": "line-a-north",
+  "last_maintenance_at": "2024-11-15T08:30:00Z"
+}
+```
+
+### Start a machine
+
+Transition a machine from `idle` to `running`. The machine must already be assigned to an active production run.
+
+```bash
+POST https://api.pizzeriaco.com/v1/machines/{machine_id}/start
+```
+
+**Example response**
+
+```json
+{
+  "id": "mch_01hx3k9",
+  "status": "running"
+}
+```
+
+### Stop a machine
+
+Transition a machine from `running` back to `idle`. The machine stops processing immediately.
+
+```bash
+POST https://api.pizzeriaco.com/v1/machines/{machine_id}/stop
+```
+
+**Example response**
+
+```json
+{
+  "id": "mch_01hx3k9",
+  "status": "idle"
+}
+```
+
+For full request and response schemas, see the [Machines API reference](/api-reference/machines/list).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Monitor machines" icon="gauge" href="/guides/monitor-machines">
+    Set up monitoring and alerting for your production line machines.
+  </Card>
+  <Card title="Start a production run" icon="circle-play" href="/guides/start-production">
+    Learn how to assign machines to a recipe and kick off a run.
+  </Card>
+</CardGroup>

@@ -1,7 +1,7 @@
 ---
-title: "POST /production/runs — Start a Production Run"
+title: "POST /production/runs — Start a New Production Run"
 sidebarTitle: "Start Run"
-description: "POST /production/runs creates and starts a pizza production run, assigning a recipe and quantity to one or more factory machines."
+description: "Start a new pizza production run by specifying a recipe, quantity, and the machines to assign. Pizzeria Co sequences and tracks work in real time."
 ---
 
 Use this endpoint to kick off a new production run on your factory floor. You provide a recipe, the number of pizzas to produce, and the machines to assign — Pizzeria Co handles the rest, sequencing work across your selected machines and tracking progress in real time.
@@ -29,7 +29,7 @@ POST /production/runs
 ## Response
 
 <ResponseField name="id" type="string">
-  The unique ID of the newly created production run (e.g. `run_01hx5qp`).
+  The unique ID of the newly created production run (e.g. `run_01hx5qp`). Run IDs always begin with the `run_` prefix.
 </ResponseField>
 
 <ResponseField name="recipe_id" type="string">

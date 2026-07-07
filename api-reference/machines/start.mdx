@@ -1,7 +1,7 @@
 ---
-title: "POST /machines/{id}/start — Start a Machine"
+title: "Start a Factory Machine — POST /machines/{id}/start"
 sidebarTitle: "Start Machine"
-description: "POST /machines/{id}/start transitions an idle machine to running status. Returns 409 if the machine is not in idle state."
+description: "POST /machines/{id}/start transitions an idle machine into running status. Returns a 409 error if the machine is not currently idle."
 ---
 
 Use this endpoint to start a machine and transition it from `idle` to `running`. Before calling this endpoint, verify that the machine is in `idle` status — you can do this with the [Get Machine](/api-reference/machines/get) endpoint. If the machine is under maintenance, in an error state, or already running, the API returns a `409` error with a descriptive error code.

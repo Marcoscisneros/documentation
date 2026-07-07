@@ -1,10 +1,10 @@
 ---
-title: "Frequently Asked Questions — Pizzeria Co API"
+title: "Frequently Asked Questions — Pizzeria Co Platform"
 sidebarTitle: "FAQ"
-description: "Answers to common questions about the Pizzeria Co API, including machine types, recipe versioning, production limits, and data retention."
+description: "Quick answers to common Pizzeria Co API questions covering machine types, recipe versioning, production run limits, sandbox testing, and data retention."
 ---
 
-Find quick answers to the most common questions about using the Pizzeria Co platform. If you don't see what you're looking for here, reach out to the support team — contact details are at the bottom of this page.
+Find quick answers to the most common questions about using the Pizzeria Co platform. If you don't see what you're looking for here, reach out to the support team at [support@pizzeriaco.com](mailto:support@pizzeriaco.com) or via the dashboard chat widget.
 
 ## Machines
 
@@ -24,7 +24,7 @@ Find quick answers to the most common questions about using the Pizzeria Co plat
 </Accordion>
 
 <Accordion title="Can I assign a machine to multiple production runs at the same time?">
-  No. A machine can only be assigned to **one active production run at a time**. Attempting to assign a busy machine to a second run will return a `409 Conflict` error.
+  No. A machine can only be assigned to **one active production run at a time**. Attempting to assign a busy machine to a second run will return a `409 Conflict` error with error code `machine_not_idle`.
 
   Before assigning a machine to a new run, confirm it has an `idle` status:
 
@@ -79,7 +79,7 @@ Find quick answers to the most common questions about using the Pizzeria Co plat
   In practice, the constraints you will encounter are:
 
   - **Machine capacity** — Each machine type has a physical throughput ceiling. Very large quantities may require sequencing runs or using multiple machines.
-  - **Ingredient inventory** — The run will fail if ingredients are depleted before the target quantity is reached. Check current inventory levels with `GET /ingredients` before scheduling large runs.
+  - **Ingredient inventory** — The run will fail with an `insufficient_inventory` error if ingredients are depleted before the target quantity is reached. Check current inventory levels with `GET /ingredients/inventory` before scheduling large runs.
 
   <Tip>
     For very large production targets, consider splitting the work across multiple runs. This gives you finer-grained visibility into progress and makes it easier to recover from partial failures.
@@ -107,7 +107,7 @@ Find quick answers to the most common questions about using the Pizzeria Co plat
 ## Recipes
 
 <Accordion title="How does recipe versioning work?">
-  Every time you update a recipe using `PUT /recipes/{recipe_id}`, the recipe's `version` number increments automatically. You do not need to manage version numbers manually.
+  Every time you update a recipe, the recipe's `version` number increments automatically. You do not need to manage version numbers manually.
 
   Production runs capture a **snapshot** of the recipe version at the time they are created. This means:
 
@@ -116,7 +116,56 @@ Find quick answers to the most common questions about using the Pizzeria Co plat
   - Only **new** runs created after an update will use the latest recipe version.
 
   <Note>
-    If you need to roll back a recipe change, you can re-apply the previous configuration via `PUT /recipes/{recipe_id}`. This creates a new version with the restored values.
+    If you need to roll back a recipe change, you can re-apply the previous configuration by updating the recipe with the restored values. This creates a new version with the original settings.
+  </Note>
+</Accordion>
+
+<Accordion title="Can I delete a recipe that is being used by a production run?">
+  No. If you attempt to delete a recipe that is referenced by an active or queued production run, the API returns a `409 Conflict` error with error code `recipe_in_use`.
+
+  To delete the recipe, you must first bring all referencing runs to a terminal state:
+
+  1. List active runs that reference the recipe:
+     ```http
+     GET /production-runs?recipe_id={recipe_id}&status=active
+     ```
+  2. Wait for those runs to complete, or cancel them:
+     ```http
+     POST /production-runs/{run_id}/cancel
+     ```
+  3. Once no active runs reference the recipe, retry the deletion:
+     ```http
+     DELETE /recipes/{recipe_id}
+     ```
+
+  Completed and failed runs that reference the recipe do **not** block deletion.
+</Accordion>
+
+---
+
+## Ingredients & Inventory
+
+<Accordion title="How do I check current ingredient inventory levels?">
+  You can fetch current inventory levels for all ingredients registered to your account at any time:
+
+  ```http
+  GET /ingredients/inventory
+  ```
+
+  The response includes each ingredient's current stock quantity and unit of measure. Use this endpoint before scheduling large production runs to confirm you have sufficient inventory.
+
+  <Tip>
+    Check inventory levels as part of your pre-run validation logic, especially for large batch jobs. This helps you catch `insufficient_inventory` errors before a run starts rather than mid-production.
+  </Tip>
+</Accordion>
+
+<Accordion title="Why hasn't inventory updated after a completed run?">
+  Ingredient inventory counts are updated **asynchronously** after a production run completes — they are not decremented in real time during active production.
+
+  Allow a few seconds after a run reaches `completed` status before querying inventory. If levels still appear incorrect after a brief delay, contact [support@pizzeriaco.com](mailto:support@pizzeriaco.com) with the relevant `run_id`.
+
+  <Note>
+    This asynchronous behaviour is intentional — it allows the API to maintain high throughput during active production. Do not build real-time control logic that depends on ingredient counts while a run is in progress.
   </Note>
 </Accordion>
 

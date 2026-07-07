@@ -1,5 +1,5 @@
 ---
-title: "Track and Manage Pizza Ingredient Inventory"
+title: "Track and Manage Pizza Ingredient Inventory in Pizzeria Co"
 sidebarTitle: "Manage Ingredients"
 description: "Use the Pizzeria Co API to list available ingredients, monitor inventory levels, and identify low-stock items before they halt production."
 ---
@@ -23,9 +23,9 @@ Ingredient availability directly determines whether a production run can complet
     ```json Example Response
     {
       "ingredients": [
-        {"id": "ing_01hx6rs", "name": "00_flour", "unit": "kg", "category": "dough"},
-        {"id": "ing_01hx6rt", "name": "tomato_sauce", "unit": "liters", "category": "sauce"},
-        {"id": "ing_01hx6ru", "name": "mozzarella", "unit": "kg", "category": "topping"}
+        {"id": "ing_01hx6rs", "name": "00 Flour", "unit": "kg", "category": "dough"},
+        {"id": "ing_01hx6rt", "name": "Tomato Sauce", "unit": "liters", "category": "sauce"},
+        {"id": "ing_01hx6ru", "name": "Mozzarella", "unit": "kg", "category": "topping"}
       ]
     }
     ```
@@ -50,7 +50,7 @@ Ingredient availability directly determines whether a production run can complet
       "inventory": [
         {
           "ingredient_id": "ing_01hx6rs",
-          "name": "00_flour",
+          "name": "00 Flour",
           "unit": "kg",
           "quantity_available": 850.5,
           "low_stock_threshold": 100,
@@ -59,7 +59,7 @@ Ingredient availability directly determines whether a production run can complet
         },
         {
           "ingredient_id": "ing_01hx6ru",
-          "name": "mozzarella",
+          "name": "Mozzarella",
           "unit": "kg",
           "quantity_available": 42.0,
           "low_stock_threshold": 50,
@@ -76,7 +76,7 @@ Ingredient availability directly determines whether a production run can complet
   <Step title="Identify low-stock items">
     Scan the `inventory` array for any entry where `"is_low_stock": true`. These ingredients have fallen below their configured `low_stock_threshold` and need restocking before you start a large run.
 
-    In the example above, `mozzarella` has only `42.0 kg` remaining against a threshold of `50 kg`, so `is_low_stock` is `true`. Any recipe requiring mozzarella is at risk if production volume is high.
+    In the example above, Mozzarella has only `42.0 kg` remaining against a threshold of `50 kg`, so `is_low_stock` is `true`. Any recipe requiring mozzarella is at risk if production volume is high.
 
     <Tip>
       Run an inventory check as an automated pre-flight step in your production pipeline. If any required ingredient for your target recipe returns `is_low_stock: true`, halt the workflow and trigger a restocking alert before proceeding.
@@ -86,9 +86,9 @@ Ingredient availability directly determines whether a production run can complet
   <Step title="Plan restocking using thresholds">
     Use the `low_stock_threshold` value to understand the minimum safe quantity for each ingredient. The threshold is set per ingredient in your account configuration and represents the point below which production reliability is at risk.
 
-    To calculate how much stock you need to order, subtract `quantity_available` from your desired buffer level. For example, if your target buffer for mozzarella is `200 kg` and you currently have `42 kg`:
+    To calculate how much stock you need to order, subtract `quantity_available` from your desired buffer level. For example, if your target buffer for Mozzarella is `200 kg` and you currently have `42 kg`:
 
-    ```
+    ```text Reorder Calculation
     reorder_quantity = target_buffer - quantity_available
     reorder_quantity = 200 - 42 = 158 kg
     ```

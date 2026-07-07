@@ -1,7 +1,7 @@
 ---
-title: "GET /ingredients — List All Ingredients"
+title: "GET /ingredients — List and Filter Your Ingredients"
 sidebarTitle: "List Ingredients"
-description: "GET /ingredients returns a list of all ingredients tracked in your Pizzeria Co account, including name, unit, and category."
+description: "Retrieve the complete ingredient catalog for your Pizzeria Co account, including each ingredient name, unit of measurement, and product category."
 ---
 
 Use this endpoint to retrieve the full catalog of ingredients configured in your Pizzeria Co account. Each ingredient record captures the name, measurement unit, and category — giving you the building blocks to understand what goes into your recipes and to cross-reference with live inventory levels.
@@ -33,11 +33,11 @@ GET /ingredients
 
   <Expandable title="Ingredient object fields">
     <ResponseField name="id" type="string">
-      The unique ID of the ingredient (e.g. `ing_01hx6rs`).
+      The unique ID of the ingredient (e.g. `ing_01hx6rs`). Ingredient IDs always begin with the `ing_` prefix.
     </ResponseField>
 
     <ResponseField name="name" type="string">
-      The name of the ingredient (e.g. `mozzarella`).
+      The name of the ingredient (e.g. `Mozzarella`).
     </ResponseField>
 
     <ResponseField name="unit" type="string">
@@ -70,9 +70,9 @@ curl https://api.pizzeriaco.com/v1/ingredients \
 ```json
 {
   "ingredients": [
-    {"id": "ing_01hx6rs", "name": "00_flour", "unit": "kg", "category": "dough"},
-    {"id": "ing_01hx6rt", "name": "tomato_sauce", "unit": "liters", "category": "sauce"},
-    {"id": "ing_01hx6ru", "name": "mozzarella", "unit": "kg", "category": "topping"}
+    {"id": "ing_01hx6rs", "name": "00 Flour",      "unit": "kg",     "category": "dough"},
+    {"id": "ing_01hx6rt", "name": "Tomato Sauce",  "unit": "liters", "category": "sauce"},
+    {"id": "ing_01hx6ru", "name": "Mozzarella",    "unit": "kg",     "category": "topping"}
   ],
   "next_cursor": null,
   "total": 3

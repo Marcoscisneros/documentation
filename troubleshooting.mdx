@@ -1,10 +1,10 @@
 ---
-title: "Troubleshooting Common Pizzeria Co API Issues"
+title: "Troubleshooting Common Errors in the Pizzeria Co API"
 sidebarTitle: "Troubleshooting"
-description: "Diagnose and resolve common issues with the Pizzeria Co API, including authentication errors, machine conflicts, and failed production runs."
+description: "Step-by-step guidance to diagnose and resolve Pizzeria Co API errors: authentication failures, machine conflicts, production run issues, and rate limiting."
 ---
 
-This guide covers the most common issues you may encounter when working with the Pizzeria Co API and how to resolve them. Work through the relevant section below to identify the root cause and apply the appropriate fix before retrying your request.
+This guide covers the most common errors you may encounter when working with the Pizzeria Co API and how to resolve them. Work through the relevant section below to identify the root cause and apply the appropriate fix before retrying your request.
 
 ## Authentication & Authorization
 
@@ -44,8 +44,8 @@ This guide covers the most common issues you may encounter when working with the
 
 ## Machine Issues
 
-<Accordion title="409 Conflict when starting a machine">
-  A `409 Conflict` on a machine start request means the machine is already running or is in a non-idle state and cannot accept a new command.
+<Accordion title="409 Conflict when starting a machine (machine_not_idle)">
+  A `409 Conflict` with error code `machine_not_idle` on a machine start request means the machine is not in an `idle` state and cannot accept a new command.
 
   **Steps to resolve:**
 
@@ -65,20 +65,38 @@ This guide covers the most common issues you may encounter when working with the
   </Tip>
 </Accordion>
 
+<Accordion title="409 Conflict — machine is in maintenance (machine_in_maintenance)">
+  A `409 Conflict` with error code `machine_in_maintenance` means the machine has been placed in maintenance mode and cannot accept production commands until maintenance is complete.
+
+  **Steps to resolve:**
+
+  1. Fetch the machine's current status to confirm it is in `maintenance` mode:
+     ```http
+     GET /machines/{machine_id}
+     ```
+  2. Do not attempt to start or assign the machine while it is in `maintenance` state. Wait until the status returns to `idle` before issuing further commands.
+  3. If the machine appears stuck in `maintenance` state unexpectedly, contact [support@pizzeriaco.com](mailto:support@pizzeriaco.com) with the relevant `machine_id`.
+
+  <Note>
+    Maintenance mode is used to take a machine offline safely for servicing. Any production runs queued for that machine will remain in `queued` status until the machine returns to `idle`.
+  </Note>
+</Accordion>
+
 ---
 
 ## Production Run Issues
 
-<Accordion title="Production run stuck in `queued` status">
+<Accordion title="Production run stuck in queued status">
   A production run remains in `queued` when it is waiting for resources to become available before it can begin executing.
 
   **Common causes and fixes:**
 
   - **Machine not idle:** The machine assigned to the run may still be busy with another task. Fetch the machine's status using `GET /machines/{machine_id}` and wait for it to reach `idle`.
+  - **Machine in maintenance:** The machine may be in `maintenance` mode. Check its status and wait for maintenance to complete before the run can proceed.
   - **Machine offline:** The machine may have gone offline or lost connectivity. Check its status and resolve any hardware issues before the run can proceed.
-  - **Insufficient ingredient inventory:** The run requires ingredients that are not available in sufficient quantities. Check current inventory levels:
+  - **Insufficient ingredient inventory (`insufficient_inventory`):** The run requires ingredients that are not available in sufficient quantities. Check current inventory levels:
     ```http
-    GET /ingredients
+    GET /ingredients/inventory
     ```
     Restock any depleted ingredients and the queued run will pick them up automatically once resources are ready.
 
@@ -98,7 +116,7 @@ This guide covers the most common issues you may encounter when working with the
      ```
   2. Common error causes include:
      - **Machine went offline mid-run** — Check the machine's current status and resolve any connectivity or hardware issues.
-     - **Ingredient depleted during the run** — Check inventory levels with `GET /ingredients` and restock before retrying.
+     - **Ingredient depleted during the run (`insufficient_inventory`)** — Check inventory levels with `GET /ingredients/inventory` and restock before retrying.
      - **Recipe misconfiguration** — Verify the recipe referenced by the run has valid parameters for the assigned machine type.
   3. Once the root cause is resolved, create a **new** production run. Failed runs cannot be resumed or retried in place.
 
@@ -107,8 +125,8 @@ This guide covers the most common issues you may encounter when working with the
   </Warning>
 </Accordion>
 
-<Accordion title="Recipe deletion returns 409 Conflict">
-  You cannot delete a recipe that is currently referenced by an active production run. The API returns `409 Conflict` to protect run integrity.
+<Accordion title="Recipe deletion returns 409 Conflict (recipe_in_use)">
+  You cannot delete a recipe that is currently referenced by an active production run. The API returns `409 Conflict` with error code `recipe_in_use` to protect run integrity.
 
   **Steps to resolve:**
 
@@ -130,12 +148,29 @@ This guide covers the most common issues you may encounter when working with the
   </Note>
 </Accordion>
 
+<Accordion title="400 or 422 error when creating a production run (invalid_recipe_id)">
+  A `400 Bad Request` or `422 Unprocessable Entity` response with error code `invalid_recipe_id` means the `recipe_id` you supplied does not correspond to an existing recipe in your account.
+
+  **Steps to resolve:**
+
+  1. Confirm the recipe exists by fetching it directly:
+     ```http
+     GET /recipes/{recipe_id}
+     ```
+     A `404 Not Found` response confirms the recipe does not exist or has been deleted.
+  2. List your available recipes to find the correct ID:
+     ```http
+     GET /recipes
+     ```
+  3. If you recently deleted the recipe in question, you will need to recreate it before starting a new production run. See the [Create a Recipe](/guides/create-recipe) guide for details.
+</Accordion>
+
 ---
 
 ## Rate Limiting & Performance
 
 <Accordion title="Rate limit exceeded (429 Too Many Requests)">
-  A `429 Too Many Requests` response means your integration is sending more requests than the API allows within a given time window.
+  A `429 Too Many Requests` response with error code `rate_limit_exceeded` means your integration is sending more requests than the API allows within a given time window.
 
   **Steps to resolve:**
 
@@ -145,7 +180,7 @@ This guide covers the most common issues you may encounter when working with the
      ```
   2. Implement exponential backoff in your client so that retries slow down progressively rather than hammering the API at a fixed rate.
   3. Audit your integration for unnecessary polling. Where possible, increase polling intervals or batch requests.
-  4. If you are consistently hitting rate limits under normal operating conditions, contact support to discuss a higher-tier plan.
+  4. If you are consistently hitting rate limits under normal operating conditions, contact [support@pizzeriaco.com](mailto:support@pizzeriaco.com) to discuss a higher-tier plan.
 
   For full details on limits and windows, see the [Rate Limits](/api-reference/rate-limits) reference.
 </Accordion>
@@ -156,8 +191,8 @@ This guide covers the most common issues you may encounter when working with the
   **What to expect:**
 
   - Allow a few seconds after a production run reaches `completed` status for inventory levels to reflect the consumed ingredients.
-  - If you query `GET /ingredients` immediately after run completion, you may see stale values. Retry the request after a brief delay.
-  - If inventory appears incorrect well after a run has completed, contact support with the relevant `run_id` for investigation.
+  - If you query `GET /ingredients/inventory` immediately after run completion, you may see stale values. Retry the request after a brief delay.
+  - If inventory appears incorrect well after a run has completed, contact [support@pizzeriaco.com](mailto:support@pizzeriaco.com) with the relevant `run_id` for investigation.
 
   <Note>
     This asynchronous behaviour is by design to maintain high throughput during active production. Do not base real-time control logic on ingredient counts during a run.

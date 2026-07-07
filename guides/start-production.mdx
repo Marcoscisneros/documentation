@@ -1,7 +1,7 @@
 ---
-title: "Start and Manage a Pizza Production Run"
+title: "Start and Manage a Pizza Production Run in Pizzeria Co"
 sidebarTitle: "Start Production"
-description: "Learn how to start a production run, assign machines to a recipe, track progress, and cancel a run using the Pizzeria Co API."
+description: "Learn how to start a production run, assign machines to a recipe, track run progress in real time, and cancel a run using the Pizzeria Co API."
 ---
 
 A production run is an instruction to your factory machinery to produce a specific quantity of pizzas from a given recipe. Before submitting a run, confirm that the machines you plan to assign are available and that your ingredient inventory can cover the order. Once a run is queued, you can poll its status in real time and cancel it programmatically if needed.
@@ -92,12 +92,13 @@ A production run is an instruction to your factory machinery to produce a specif
 
     </CodeGroup>
 
-    The `status` field moves through the following values during a normal run:
+    The `status` field moves through the following values during a run:
 
     | Status | Meaning |
     |---|---|
     | `queued` | The run is accepted and waiting for machines to become ready. |
     | `running` | Machines are actively producing pizzas. |
+    | `paused` | The run has been temporarily suspended and will resume when unpaused. |
     | `completed` | All requested pizzas have been produced successfully. |
     | `failed` | The run stopped due to an error. Check the `error` field for details. |
     | `cancelled` | The run was stopped manually via the cancel endpoint. |
