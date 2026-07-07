@@ -1,0 +1,73 @@
+---
+title: "Production Runs: Orchestrate Your Pizza Manufacturing"
+sidebarTitle: "Production Runs"
+description: "Learn how production runs in Pizzeria Co tie a recipe, quantity, and set of machines together into a trackable manufacturing job."
+---
+
+A production run is the central job object in Pizzeria Co. It binds a recipe, a target quantity, and one or more machines into a single trackable unit of work. When you create a run, the platform validates that all assigned machines are available, locks in the current recipe version, and begins coordinating the production sequence automatically. You can monitor progress in real time, pause or cancel a run when needed, and inspect a full record of what was produced once the run completes.
+
+## Status lifecycle
+
+Each production run moves through a defined set of statuses from creation to completion.
+
+<CardGroup cols={2}>
+  <Card title="queued" icon="clock">
+    The run has been created and scheduled, but one or more assigned machines are not yet ready. The platform is waiting for them to become available.
+  </Card>
+  <Card title="running" icon="circle-play">
+    The run is actively producing pizzas. Machines are operating and `quantity_completed` is incrementing in real time.
+  </Card>
+  <Card title="paused" icon="circle-pause">
+    The run has been temporarily halted — for example, to refill an ingredient or to manually inspect a batch. Machines are idle but the run can be resumed.
+  </Card>
+  <Card title="completed" icon="circle-check">
+    All requested pizzas have been produced successfully. The run is closed and `quantity_completed` equals `quantity`.
+  </Card>
+  <Card title="failed" icon="circle-xmark">
+    The run encountered an unrecoverable error and cannot continue. Check the `error` field for details on what went wrong.
+  </Card>
+  <Card title="cancelled" icon="ban">
+    The run was manually cancelled by a user before it could complete. Partially produced pizzas are not counted toward `quantity_completed`.
+  </Card>
+</CardGroup>
+
+## Production run fields
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Unique identifier for the run, e.g. `run_01hx5qp` |
+| `recipe_id` | string | ID of the recipe used for this run |
+| `recipe_version` | integer | The specific version of the recipe locked in when the run was created |
+| `quantity` | integer | Total number of pizzas requested |
+| `quantity_completed` | integer | Number of pizzas successfully produced so far |
+| `machine_ids` | array of strings | IDs of all machines assigned to this run |
+| `status` | enum | Current run status (see lifecycle above) |
+| `started_at` | string | ISO 8601 timestamp of when the run transitioned to `running` |
+| `completed_at` | string | ISO 8601 timestamp of when the run reached a terminal state, or `null` if still active |
+| `error` | string or null | Human-readable error message if the run `failed`, otherwise `null` |
+
+## Example production run object
+
+```json
+{
+  "id": "run_01hx5qp",
+  "recipe_id": "rec_01hx4mn",
+  "recipe_version": 3,
+  "quantity": 500,
+  "quantity_completed": 214,
+  "machine_ids": [
+    "mch_01hx3k9",
+    "mch_01hx3ka",
+    "mch_01hx3kb",
+    "mch_01hx3kc"
+  ],
+  "status": "running",
+  "started_at": "2024-12-01T06:00:00Z",
+  "completed_at": null,
+  "error": null
+}
+```
+
+<Note>
+  Poll `quantity_completed` against `quantity` to track run progress. For example, `quantity_completed / quantity * 100` gives you a straightforward percentage. If you need real-time updates without polling, subscribe to the `production_run.progress` webhook event instead.
+</Note>

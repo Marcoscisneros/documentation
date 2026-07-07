@@ -1,0 +1,135 @@
+---
+title: "Start and Manage a Pizza Production Run"
+sidebarTitle: "Start Production"
+description: "Learn how to start a production run, assign machines to a recipe, track progress, and cancel a run using the Pizzeria Co API."
+---
+
+A production run is an instruction to your factory machinery to produce a specific quantity of pizzas from a given recipe. Before submitting a run, confirm that the machines you plan to assign are available and that your ingredient inventory can cover the order. Once a run is queued, you can poll its status in real time and cancel it programmatically if needed.
+
+<Steps>
+
+  <Step title="Check machine availability">
+    Fetch the list of all registered machines and review their `status` field. Only machines with `status: idle` can be assigned to a new production run.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl https://api.pizzeriaco.com/v1/machines \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    Look through the response and note the `id` values of every machine showing `"status": "idle"`. You will supply these IDs when starting the run.
+
+    <Tip>
+      Use the `?status=idle` query parameter to filter the response to only available machines and reduce the payload size.
+    </Tip>
+  </Step>
+
+  <Step title="Check ingredient inventory">
+    Before committing to a large run, verify that your ingredient levels are sufficient. Fetch the full inventory and scan each item for `"is_low_stock": true`.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl https://api.pizzeriaco.com/v1/ingredients/inventory \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    Any ingredient with `"is_low_stock": true` is below its configured minimum threshold. Resolve low-stock items before starting a large run to avoid mid-run stoppages.
+  </Step>
+
+  <Step title="Start the production run">
+    Send a `POST` request to `/production/runs` with the recipe ID, desired quantity, and the IDs of the machines you want to assign. The API queues the run immediately and returns a run object with a unique `id`.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl -X POST https://api.pizzeriaco.com/v1/production/runs \
+      -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "recipe_id": "rec_01hx4mn",
+        "quantity": 500,
+        "machine_ids": ["mch_01hx3k9", "mch_01hx3ka"]
+      }'
+    ```
+
+    </CodeGroup>
+
+    A successful request returns `201 Created` with the run object:
+
+    ```json Example Response
+    {
+      "id": "run_01hx5qp",
+      "recipe_id": "rec_01hx4mn",
+      "recipe_version": 1,
+      "quantity": 500,
+      "quantity_completed": 0,
+      "machine_ids": ["mch_01hx3k9", "mch_01hx3ka"],
+      "status": "queued",
+      "started_at": "2024-03-15T10:00:00Z",
+      "completed_at": null,
+      "error": null
+    }
+    ```
+
+    The `recipe_version` field records which version of the recipe was active at the time the run was created. Save the run `id` to poll its status in the next step.
+  </Step>
+
+  <Step title="Poll run status">
+    Fetch the run at any time using its `id` to check production progress. The `quantity_completed` field increments as pizzas finish, and `status` reflects the current state of the run.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl https://api.pizzeriaco.com/v1/production/runs/run_01hx5qp \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    The `status` field moves through the following values during a normal run:
+
+    | Status | Meaning |
+    |---|---|
+    | `queued` | The run is accepted and waiting for machines to become ready. |
+    | `running` | Machines are actively producing pizzas. |
+    | `completed` | All requested pizzas have been produced successfully. |
+    | `failed` | The run stopped due to an error. Check the `error` field for details. |
+    | `cancelled` | The run was stopped manually via the cancel endpoint. |
+
+    <Note>
+      Poll at a reasonable interval — every 10 to 30 seconds is sufficient for most production volumes. Avoid polling more frequently than once per second to stay within rate limits.
+    </Note>
+  </Step>
+
+  <Step title="Handle completion or failure">
+    When `status` reaches `completed`, the `quantity_completed` value will equal the originally requested `quantity` and `completed_at` will be populated with a timestamp.
+
+    If `status` is `failed`, inspect the `error` field for a machine or ingredient error message, resolve the underlying issue, and start a new run.
+
+    To stop a run that is still `queued` or `running`, send a cancel request:
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl -X POST https://api.pizzeriaco.com/v1/production/runs/run_01hx5qp/cancel \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    <Note>
+      Cancelling a run sets its `status` to `cancelled`. The `quantity_completed` counter reflects the number of pizzas that were fully produced before the cancellation was processed.
+    </Note>
+
+    <Warning>
+      You cannot restart a cancelled run. If you need to resume production, create a new run with the same recipe and the remaining quantity.
+    </Warning>
+  </Step>
+
+</Steps>

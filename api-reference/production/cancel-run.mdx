@@ -1,0 +1,108 @@
+---
+title: "POST /production/runs/{id}/cancel — Cancel a Run"
+sidebarTitle: "Cancel Run"
+description: "POST /production/runs/{id}/cancel stops an active production run and sets its status to cancelled. Already-produced pizzas are not reversed."
+---
+
+Use this endpoint to immediately stop an active production run. The assigned machines halt processing, the run status is set to `cancelled`, and any pizzas already produced are preserved in `quantity_completed`. This is useful when you need to free up machines for a higher-priority run or respond to an operational change on the floor.
+
+## Endpoint
+
+```
+POST /production/runs/{id}/cancel
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the production run to cancel (e.g. `run_01hx5qp`).
+</ParamField>
+
+## Request Body
+
+This endpoint does not accept a request body.
+
+## Response
+
+Returns the updated run object with `status` set to `cancelled` and `completed_at` populated with the cancellation timestamp.
+
+<ResponseField name="id" type="string">
+  The unique ID of the cancelled production run.
+</ResponseField>
+
+<ResponseField name="recipe_id" type="string">
+  The ID of the recipe used for this run.
+</ResponseField>
+
+<ResponseField name="recipe_version" type="integer">
+  The snapshot version of the recipe that was captured when the run started.
+</ResponseField>
+
+<ResponseField name="quantity" type="integer">
+  The total number of pizzas originally requested.
+</ResponseField>
+
+<ResponseField name="quantity_completed" type="integer">
+  The number of pizzas produced before cancellation. This count is final and is not reversed.
+</ResponseField>
+
+<ResponseField name="machine_ids" type="array of strings">
+  The IDs of the machines that were assigned to this run. They return to `idle` status after cancellation.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Always `cancelled` for a successfully cancelled run.
+</ResponseField>
+
+<ResponseField name="started_at" type="string">
+  ISO 8601 timestamp of when the run was originally created.
+</ResponseField>
+
+<ResponseField name="completed_at" type="string">
+  ISO 8601 timestamp of when the run was cancelled.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  `null` for a cancellation — the run was stopped intentionally, not due to a fault.
+</ResponseField>
+
+## Important Notes
+
+<Warning>
+  You cannot restart a cancelled run. To resume production for the same recipe and quantity, create a new run using [POST /production/runs](/api-reference/production/start-run).
+</Warning>
+
+<Note>
+  Pizzas produced before the cancellation are counted in `quantity_completed` and are not reversed. Account for this when calculating the remaining quantity for any follow-up run.
+</Note>
+
+## Code Example
+
+```bash
+curl -X POST https://api.pizzeriaco.com/v1/production/runs/run_01hx5qp/cancel \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response
+
+```json
+{
+  "id": "run_01hx5qp",
+  "recipe_id": "rec_01hx4mn",
+  "recipe_version": 1,
+  "quantity": 500,
+  "quantity_completed": 237,
+  "machine_ids": ["mch_01hx3k9", "mch_01hx3ka"],
+  "status": "cancelled",
+  "started_at": "2024-03-15T10:00:00Z",
+  "completed_at": "2024-03-15T10:42:17Z",
+  "error": null
+}
+```
+
+## Errors
+
+| Status | Description |
+|--------|-------------|
+| `404` | No run with the provided `id` exists in your account. |
+| `409` | The run is already in a terminal state (`completed`, `failed`, or `cancelled`) and cannot be cancelled again. |

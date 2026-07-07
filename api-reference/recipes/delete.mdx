@@ -1,0 +1,47 @@
+---
+title: "DELETE /recipes/{id} — Delete a Pizza Recipe"
+sidebarTitle: "Delete Recipe"
+description: "DELETE /recipes/{id} permanently removes a recipe. Returns 409 if the recipe is currently used by an active or queued production run."
+---
+
+Use this endpoint to permanently delete a recipe from your account. The API prevents deletion if the recipe is currently referenced by an active or queued production run — you must either wait for those runs to complete or cancel them before proceeding. Historical completed runs that referenced this recipe retain a snapshot of the recipe data, so past records remain intact after deletion.
+
+<Warning>
+  Deletion is permanent and cannot be undone. Ensure you no longer need this recipe before proceeding.
+</Warning>
+
+## Endpoint
+
+```
+DELETE https://api.pizzeriaco.com/v1/recipes/{id}
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the recipe to delete (e.g. `rec_01hx4mn`).
+</ParamField>
+
+## Response
+
+Returns `204 No Content` on success. No response body is returned.
+
+## Errors
+
+| Status | Error Code | Description |
+|--------|------------|-------------|
+| `404`  | —          | No recipe found with the given `id`. |
+| `409`  | `recipe_in_use` | The recipe is referenced by one or more active or queued production runs and cannot be deleted until those runs are completed or cancelled. |
+
+## Example Request
+
+```bash
+curl -X DELETE https://api.pizzeriaco.com/v1/recipes/rec_01hx4mn \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Example Response
+
+```
+204 No Content
+```

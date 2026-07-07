@@ -1,0 +1,120 @@
+---
+title: "Create and Manage Pizza Recipes via the API"
+sidebarTitle: "Create Recipe"
+description: "Step-by-step guide to creating, updating, and deleting pizza recipes in Pizzeria Co using the REST API."
+---
+
+Recipes are the foundation of every production run in Pizzeria Co. A recipe defines everything the factory machinery needs to produce a consistent pizza at scale — from dough weight and sauce type to baking temperature and duration. Once a recipe exists in the system, you can reference it across unlimited production runs and update it independently as your specifications evolve.
+
+<Steps>
+
+  <Step title="Define your recipe parameters">
+    Before making any API call, gather the fields your recipe requires. Every recipe must include the following parameters:
+
+    | Field | Type | Description |
+    |---|---|---|
+    | `name` | string | A human-readable label for the recipe (e.g. `"Pepperoni XL"`). |
+    | `dough_weight_g` | integer | The raw dough weight in grams per pizza unit. |
+    | `sauce` | string | The sauce type applied during assembly (e.g. `"tomato"`, `"white"`). |
+    | `toppings` | array of strings | An ordered list of toppings applied to the pizza. |
+    | `bake_temp_celsius` | integer | The oven temperature in degrees Celsius. |
+    | `bake_duration_seconds` | integer | How long the pizza bakes, in seconds. |
+
+    <Tip>
+      Use descriptive, versioned names like `"Margherita v2"` or `"BBQ Chicken Large"` to make recipes easy to identify when reviewing production history.
+    </Tip>
+  </Step>
+
+  <Step title="Create the recipe">
+    Send a `POST` request to `/recipes` with your recipe parameters as a JSON body. The API returns the created recipe object including its assigned `id`, which you will need for production runs and future updates.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl -X POST https://api.pizzeriaco.com/v1/recipes \
+      -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "Pepperoni XL",
+        "dough_weight_g": 400,
+        "sauce": "tomato",
+        "toppings": ["mozzarella", "pepperoni"],
+        "bake_temp_celsius": 275,
+        "bake_duration_seconds": 210
+      }'
+    ```
+
+    </CodeGroup>
+
+    A successful request returns `201 Created` with the full recipe object:
+
+    ```json Example Response
+    {
+      "id": "rec_01hx4mn",
+      "name": "Pepperoni XL",
+      "dough_weight_g": 400,
+      "sauce": "tomato",
+      "toppings": ["mozzarella", "pepperoni"],
+      "bake_temp_celsius": 275,
+      "bake_duration_seconds": 210,
+      "version": 1,
+      "created_at": "2024-03-15T09:30:00Z",
+      "updated_at": "2024-03-15T09:30:00Z"
+    }
+    ```
+
+    Save the returned `id` value — you will reference it whenever you start a production run or modify this recipe.
+  </Step>
+
+  <Step title="Verify the recipe was created">
+    Confirm the recipe was stored correctly by fetching it with a `GET` request. Replace `rec_01hx4mn` with your recipe's `id`.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl https://api.pizzeriaco.com/v1/recipes/rec_01hx4mn \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    The response will mirror the object returned at creation. If the recipe is not found, the API returns `404 Not Found`.
+  </Step>
+
+  <Step title="Update a recipe">
+    Send a `PUT` request to `/recipes/{id}` with only the fields you want to change. You do not need to resend the full recipe body — any omitted fields retain their current values.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl -X PUT https://api.pizzeriaco.com/v1/recipes/rec_01hx4mn \
+      -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"bake_duration_seconds": 220}'
+    ```
+
+    </CodeGroup>
+
+    <Note>
+      Every successful update increments the recipe's `version` field by one. Any production runs already in progress continue using the recipe version they were started with — your changes only apply to new runs created after the update.
+    </Note>
+  </Step>
+
+  <Step title="Delete a recipe">
+    Remove a recipe permanently by sending a `DELETE` request to `/recipes/{id}`. A successful deletion returns `204 No Content` with an empty body.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl -X DELETE https://api.pizzeriaco.com/v1/recipes/rec_01hx4mn \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    <Warning>
+      You cannot delete a recipe that is currently referenced by an active production run. The API returns `409 Conflict` in this case. Wait for the run to complete or cancel it first, then retry the deletion.
+    </Warning>
+  </Step>
+
+</Steps>

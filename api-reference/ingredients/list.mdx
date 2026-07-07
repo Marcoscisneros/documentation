@@ -1,0 +1,98 @@
+---
+title: "GET /ingredients — List All Ingredients"
+sidebarTitle: "List Ingredients"
+description: "GET /ingredients returns a list of all ingredients tracked in your Pizzeria Co account, including name, unit, and category."
+---
+
+Use this endpoint to retrieve the full catalog of ingredients configured in your Pizzeria Co account. Each ingredient record captures the name, measurement unit, and category — giving you the building blocks to understand what goes into your recipes and to cross-reference with live inventory levels.
+
+## Endpoint
+
+```
+GET /ingredients
+```
+
+## Query Parameters
+
+<ParamField query="category" type="string">
+  Filter results to a specific ingredient category. One of: `dough`, `sauce`, `topping`, or `packaging`. Omit to return ingredients across all categories.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="20">
+  The maximum number of ingredients to return per page. Accepts values between `1` and `100`.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  A pagination cursor returned as `next_cursor` from a previous response. Pass this value to retrieve the next page of results.
+</ParamField>
+
+## Response
+
+<ResponseField name="ingredients" type="array of objects">
+  The list of ingredients matching your query.
+
+  <Expandable title="Ingredient object fields">
+    <ResponseField name="id" type="string">
+      The unique ID of the ingredient (e.g. `ing_01hx6rs`).
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      The name of the ingredient (e.g. `mozzarella`).
+    </ResponseField>
+
+    <ResponseField name="unit" type="string">
+      The unit of measurement used for this ingredient (e.g. `kg`, `liters`).
+    </ResponseField>
+
+    <ResponseField name="category" type="string">
+      The category this ingredient belongs to. One of: `dough`, `sauce`, `topping`, or `packaging`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  A cursor to pass as the `cursor` query parameter to retrieve the next page. `null` when you have reached the last page.
+</ResponseField>
+
+<ResponseField name="total" type="integer">
+  The total number of ingredients matching your query, across all pages.
+</ResponseField>
+
+## Code Example
+
+```bash
+curl https://api.pizzeriaco.com/v1/ingredients \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response
+
+```json
+{
+  "ingredients": [
+    {"id": "ing_01hx6rs", "name": "00_flour", "unit": "kg", "category": "dough"},
+    {"id": "ing_01hx6rt", "name": "tomato_sauce", "unit": "liters", "category": "sauce"},
+    {"id": "ing_01hx6ru", "name": "mozzarella", "unit": "kg", "category": "topping"}
+  ],
+  "next_cursor": null,
+  "total": 3
+}
+```
+
+## Filtering by Category
+
+To retrieve only topping ingredients:
+
+```bash
+curl 'https://api.pizzeriaco.com/v1/ingredients?category=topping' \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Pagination
+
+When `next_cursor` is not `null`, pass it as the `cursor` parameter to fetch the next page:
+
+```bash
+curl 'https://api.pizzeriaco.com/v1/ingredients?limit=20&cursor=cur_01hx8cd' \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```

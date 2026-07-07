@@ -1,0 +1,70 @@
+---
+title: "Understanding Pizza Factory Machines in Pizzeria Co"
+sidebarTitle: "Machines"
+description: "Learn how Pizzeria Co models physical factory machines, their types, status lifecycle, and how to interact with them through the API."
+---
+
+Machines are the foundational building blocks of your Pizzeria Co factory. Each machine object represents a physical piece of pizza-making equipment registered in your workspace — from dough mixers at the start of the line to packaging stations at the end. You interact with machines through the API to monitor their status, assign them to production runs, and track maintenance history.
+
+## Machine types
+
+Pizzeria Co supports six machine types, each corresponding to a distinct stage of the pizza production process.
+
+| Type | Description |
+|---|---|
+| `dough_mixer` | Combines flour, water, yeast, and other dry ingredients into dough |
+| `sauce_applicator` | Spreads sauce onto dough bases at a controlled rate |
+| `topping_station` | Applies toppings according to the active recipe |
+| `oven` | Bakes pizzas at a defined temperature and duration |
+| `cutting_station` | Slices finished pizzas into the correct number of portions |
+| `packaging_station` | Wraps and labels finished pizzas for dispatch |
+
+## Status lifecycle
+
+Every machine has a `status` field that reflects its current operational state. The standard flow moves a machine from `idle` to `running` and back to `idle` as production runs start and finish.
+
+| Status | Meaning |
+|---|---|
+| `idle` | Machine is registered, operational, and available to be assigned to a run |
+| `running` | Machine is actively processing as part of a production run |
+| `maintenance` | Machine is taken offline for scheduled or unscheduled maintenance |
+| `error` | Machine has reported a fault and requires attention before it can resume |
+| `offline` | Machine is powered down or unreachable by the platform |
+
+<Note>
+  A machine must be in `idle` status before it can be assigned to a new production run. Attempting to assign a machine in any other status will return a `409 Conflict` error.
+</Note>
+
+## Machine fields
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Unique identifier for the machine, e.g. `mch_01hx3k9` |
+| `name` | string | Human-readable display name |
+| `type` | enum | One of the six machine types listed above |
+| `status` | enum | Current operational status |
+| `capacity_kg` | number | Maximum throughput capacity in kilograms per hour |
+| `location` | string | Factory floor location label, e.g. `line-a-north` |
+| `last_maintenance_at` | string | ISO 8601 timestamp of the most recent maintenance event |
+
+<Note>
+  Machine IDs are immutable. Once a machine is created, its `id` never changes — even if you rename the machine or move it to a different location. Always store and reference machines by `id` in your integrations.
+</Note>
+
+## Example machine object
+
+```json
+{
+  "id": "mch_01hx3k9",
+  "name": "Mixer Alpha",
+  "type": "dough_mixer",
+  "status": "idle",
+  "capacity_kg": 120.0,
+  "location": "line-a-north",
+  "last_maintenance_at": "2024-11-15T08:30:00Z"
+}
+```
+
+<Tip>
+  Use the `location` field to encode your factory floor topology — for example, `line-a`, `line-b-oven-1`, or `dispatch-west`. Consistent location labels make it easy to filter machines by production line using the `GET /machines?location=` query parameter and to spot bottlenecks when reviewing run assignments.
+</Tip>

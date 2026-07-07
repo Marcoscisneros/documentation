@@ -1,0 +1,102 @@
+---
+title: "GET /machines — List All Factory Machines"
+sidebarTitle: "List Machines"
+description: "GET /machines returns a paginated list of all registered machines, their types, statuses, and capacities. Supports filtering by status."
+---
+
+Use this endpoint to retrieve all machines registered to your factory. The response is paginated and supports filtering by status or machine type, making it easy to surface only the machines relevant to your current workflow — for example, all idle mixers ready to accept a new production run.
+
+## Endpoint
+
+```
+GET https://api.pizzeriaco.com/v1/machines
+```
+
+## Query Parameters
+
+<ParamField query="status" type="string">
+  Filter machines by their current status. Accepted values: `idle`, `running`, `maintenance`, `error`, `offline`.
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter machines by type, such as `dough_mixer`, `oven`, or `sauce_dispenser`.
+</ParamField>
+
+<ParamField query="limit" type="integer" default={20}>
+  Number of machines to return per page. Maximum value is `100`.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor from a previous response's `next_cursor` field. Omit to start from the beginning of the list.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="machines" type="array">
+  An array of machine objects matching your query.
+
+  <Expandable title="Machine object fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for the machine (e.g. `mch_01hx3k9`).
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      Human-readable name assigned to the machine.
+    </ResponseField>
+
+    <ResponseField name="type" type="string">
+      The machine type, such as `dough_mixer` or `oven`.
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+      Current operational status: `idle`, `running`, `maintenance`, `error`, or `offline`.
+    </ResponseField>
+
+    <ResponseField name="capacity_kg" type="number">
+      Maximum load capacity of the machine in kilograms.
+    </ResponseField>
+
+    <ResponseField name="location" type="string">
+      Physical location or production line the machine is assigned to.
+    </ResponseField>
+
+    <ResponseField name="last_maintenance_at" type="string">
+      ISO 8601 timestamp of the most recent maintenance event.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string | null">
+  Cursor to pass as the `cursor` query parameter to retrieve the next page. Returns `null` when you have reached the last page.
+</ResponseField>
+
+<ResponseField name="total" type="integer">
+  Total number of machines matching your query across all pages.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl 'https://api.pizzeriaco.com/v1/machines?status=idle' \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Example Response
+
+```json
+{
+  "machines": [
+    {
+      "id": "mch_01hx3k9",
+      "name": "Dough Mixer Pro 3000",
+      "type": "dough_mixer",
+      "status": "idle",
+      "capacity_kg": 50,
+      "location": "Line A",
+      "last_maintenance_at": "2024-03-01T08:00:00Z"
+    }
+  ],
+  "next_cursor": null,
+  "total": 1
+}
+```

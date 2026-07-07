@@ -1,0 +1,112 @@
+---
+title: "Monitor Pizza Factory Machine Status and Health"
+sidebarTitle: "Monitor Machines"
+description: "Learn how to retrieve machine status, detect errors, and use the Pizzeria Co API to keep your factory floor running smoothly."
+---
+
+Keeping your machines in an operational state is critical to uninterrupted production. The Pizzeria Co API gives you real-time visibility into every machine on your factory floor — including its current status, type, location, and maintenance history. You can also start and stop machines programmatically to integrate machine control directly into your automation workflows.
+
+<Steps>
+
+  <Step title="List all machines and their status">
+    Fetch the full list of registered machines with a `GET` request to `/machines`. Each object in the response includes a `status` field that tells you whether the machine is available, active, or in a degraded state.
+
+    <CodeGroup>
+
+    ```bash List All Machines
+    curl https://api.pizzeriaco.com/v1/machines \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    ```bash Filter by Status
+    curl 'https://api.pizzeriaco.com/v1/machines?status=error' \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    Use the `?status=` query parameter to narrow results to a specific status value. For example, passing `?status=error` returns only machines that require immediate attention.
+  </Step>
+
+  <Step title="Inspect a specific machine">
+    Retrieve the full detail record for a single machine by passing its `id` to `GET /machines/{id}`. This is useful for investigating an error state or reviewing maintenance history before assigning a machine to a run.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl https://api.pizzeriaco.com/v1/machines/mch_01hx3k9 \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    Example response for a machine in an error state:
+
+    ```json Example Response
+    {
+      "id": "mch_01hx3k9",
+      "name": "Dough Mixer Pro 3000",
+      "type": "dough_mixer",
+      "status": "error",
+      "capacity_kg": 50,
+      "location": "Line A",
+      "last_maintenance_at": "2024-03-01T08:00:00Z"
+    }
+    ```
+
+    The `last_maintenance_at` timestamp helps you determine whether the machine is overdue for a scheduled service.
+  </Step>
+
+  <Step title="Understand machine status values">
+    The `status` field uses a fixed set of values. Refer to the table below to understand what each one means and what action, if any, is required:
+
+    | Status | Description | API-controllable |
+    |---|---|---|
+    | `idle` | The machine is powered on and ready to accept a production run. | Yes |
+    | `running` | The machine is actively producing as part of a production run. | Yes — can be stopped |
+    | `maintenance` | The machine is taken offline for scheduled or unscheduled servicing. | No |
+    | `error` | The machine has reported a fault and requires physical inspection. | No |
+    | `offline` | The machine is powered down or unreachable. | No |
+
+    <Note>
+      Status transitions for `maintenance`, `error`, and `offline` are driven by the machines themselves or by your operations team — they cannot be overridden through the API.
+    </Note>
+  </Step>
+
+  <Step title="Start a machine">
+    Send a `POST` request to `/machines/{id}/start` to bring an `idle` machine into a ready state ahead of a production run. The API returns the updated machine object reflecting the new status.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl -X POST https://api.pizzeriaco.com/v1/machines/mch_01hx3k9/start \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    <Warning>
+      Machines in `maintenance` or `error` status cannot be started via the API. Attempting to do so returns `422 Unprocessable Entity`. A qualified technician must physically inspect and clear the machine before it can be returned to service.
+    </Warning>
+  </Step>
+
+  <Step title="Stop a machine">
+    Send a `POST` request to `/machines/{id}/stop` to gracefully halt a machine. If the machine is currently assigned to a production run, stopping it will affect that run's output — ensure you coordinate stops with your production scheduling.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl -X POST https://api.pizzeriaco.com/v1/machines/mch_01hx3k9/stop \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    A successful stop transitions the machine to `idle` status. The API returns the updated machine object.
+
+    <Tip>
+      Poll `GET /machines?status=running` during an active production run to confirm that all assigned machines remain active. If any machine drops out of `running` unexpectedly, investigate it immediately to prevent incomplete batches.
+    </Tip>
+  </Step>
+
+</Steps>

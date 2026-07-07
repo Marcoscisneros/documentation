@@ -1,0 +1,165 @@
+---
+title: "Troubleshooting Common Pizzeria Co API Issues"
+sidebarTitle: "Troubleshooting"
+description: "Diagnose and resolve common issues with the Pizzeria Co API, including authentication errors, machine conflicts, and failed production runs."
+---
+
+This guide covers the most common issues you may encounter when working with the Pizzeria Co API and how to resolve them. Work through the relevant section below to identify the root cause and apply the appropriate fix before retrying your request.
+
+## Authentication & Authorization
+
+<Accordion title="401 Unauthorized">
+  A `401 Unauthorized` response means the API could not authenticate your request. This is almost always caused by a missing, malformed, or revoked API key.
+
+  **Steps to resolve:**
+
+  1. Confirm your request includes an `Authorization` header formatted exactly as:
+     ```http
+     Authorization: Bearer YOUR_API_KEY
+     ```
+  2. Check that you are not passing the key as a query parameter or in the request body — the `Authorization` header is required.
+  3. Verify the key has not expired or been revoked. You can view and regenerate keys in the [Pizzeria Co dashboard](https://dashboard.pizzeriaco.com).
+  4. Ensure there are no leading or trailing whitespace characters around your key value.
+
+  <Note>
+    For a full walkthrough of API key setup, see the [Authentication](/authentication) guide.
+  </Note>
+</Accordion>
+
+<Accordion title="403 Forbidden">
+  A `403 Forbidden` response means the API authenticated your key successfully but the key does not have permission to perform the requested action.
+
+  **Steps to resolve:**
+
+  1. Check whether you are using a **read-only** API key for an operation that requires write access — for example, starting a production run or updating a recipe.
+  2. If you need write access, generate a key with the appropriate permission scope from the dashboard.
+  3. Confirm the resource you are accessing belongs to your account. Cross-account access is not permitted regardless of key scope.
+
+  <Warning>
+    Avoid elevating key permissions beyond what your integration requires. Use scoped keys for each service or environment.
+  </Warning>
+</Accordion>
+
+---
+
+## Machine Issues
+
+<Accordion title="409 Conflict when starting a machine">
+  A `409 Conflict` on a machine start request means the machine is already running or is in a non-idle state and cannot accept a new command.
+
+  **Steps to resolve:**
+
+  1. Fetch the current machine status before issuing a start command:
+     ```http
+     GET /machines/{machine_id}
+     ```
+  2. Check the `status` field in the response. The machine must be in an `idle` state before it can be started.
+  3. If the machine is in a `running` state and you need to interrupt it, send a stop command and wait for the status to return to `idle`:
+     ```http
+     POST /machines/{machine_id}/stop
+     ```
+  4. If the machine is in an `error` state, resolve the underlying hardware issue before attempting to restart.
+
+  <Tip>
+    Poll the machine status endpoint at a reasonable interval (for example, every 5 seconds) rather than sending repeated start commands to avoid flooding the API.
+  </Tip>
+</Accordion>
+
+---
+
+## Production Run Issues
+
+<Accordion title="Production run stuck in `queued` status">
+  A production run remains in `queued` when it is waiting for resources to become available before it can begin executing.
+
+  **Common causes and fixes:**
+
+  - **Machine not idle:** The machine assigned to the run may still be busy with another task. Fetch the machine's status using `GET /machines/{machine_id}` and wait for it to reach `idle`.
+  - **Machine offline:** The machine may have gone offline or lost connectivity. Check its status and resolve any hardware issues before the run can proceed.
+  - **Insufficient ingredient inventory:** The run requires ingredients that are not available in sufficient quantities. Check current inventory levels:
+    ```http
+    GET /ingredients
+    ```
+    Restock any depleted ingredients and the queued run will pick them up automatically once resources are ready.
+
+  <Note>
+    Queued runs are not automatically cancelled. They will begin as soon as the assigned machine becomes available and inventory is sufficient.
+  </Note>
+</Accordion>
+
+<Accordion title="Production run failed with an error">
+  When a production run transitions to `failed` status, the `error` field on the run object describes what went wrong.
+
+  **Steps to resolve:**
+
+  1. Fetch the run and inspect the `error` field:
+     ```http
+     GET /production-runs/{run_id}
+     ```
+  2. Common error causes include:
+     - **Machine went offline mid-run** — Check the machine's current status and resolve any connectivity or hardware issues.
+     - **Ingredient depleted during the run** — Check inventory levels with `GET /ingredients` and restock before retrying.
+     - **Recipe misconfiguration** — Verify the recipe referenced by the run has valid parameters for the assigned machine type.
+  3. Once the root cause is resolved, create a **new** production run. Failed runs cannot be resumed or retried in place.
+
+  <Warning>
+    Do not attempt to restart the machine directly after a failed run without first diagnosing the `error` field. Doing so may cause repeated failures or equipment damage.
+  </Warning>
+</Accordion>
+
+<Accordion title="Recipe deletion returns 409 Conflict">
+  You cannot delete a recipe that is currently referenced by an active production run. The API returns `409 Conflict` to protect run integrity.
+
+  **Steps to resolve:**
+
+  1. List active production runs that reference the recipe:
+     ```http
+     GET /production-runs?recipe_id={recipe_id}&status=active
+     ```
+  2. Either wait for those runs to reach a terminal status (`completed` or `failed`), or cancel them explicitly:
+     ```http
+     POST /production-runs/{run_id}/cancel
+     ```
+  3. Once no active runs reference the recipe, retry the deletion:
+     ```http
+     DELETE /recipes/{recipe_id}
+     ```
+
+  <Note>
+    Completed and failed production runs retain a reference to the recipe version they used for historical record-keeping, but these do not block deletion.
+  </Note>
+</Accordion>
+
+---
+
+## Rate Limiting & Performance
+
+<Accordion title="Rate limit exceeded (429 Too Many Requests)">
+  A `429 Too Many Requests` response means your integration is sending more requests than the API allows within a given time window.
+
+  **Steps to resolve:**
+
+  1. Read the `Retry-After` header in the `429` response. It specifies the number of seconds you must wait before sending another request:
+     ```http
+     Retry-After: 15
+     ```
+  2. Implement exponential backoff in your client so that retries slow down progressively rather than hammering the API at a fixed rate.
+  3. Audit your integration for unnecessary polling. Where possible, increase polling intervals or batch requests.
+  4. If you are consistently hitting rate limits under normal operating conditions, contact support to discuss a higher-tier plan.
+
+  For full details on limits and windows, see the [Rate Limits](/api-reference/rate-limits) reference.
+</Accordion>
+
+<Accordion title="Ingredient inventory not updating after a run">
+  Ingredient inventory counts are updated **asynchronously** after each pizza is completed — they are not decremented in real time during a run.
+
+  **What to expect:**
+
+  - Allow a few seconds after a production run reaches `completed` status for inventory levels to reflect the consumed ingredients.
+  - If you query `GET /ingredients` immediately after run completion, you may see stale values. Retry the request after a brief delay.
+  - If inventory appears incorrect well after a run has completed, contact support with the relevant `run_id` for investigation.
+
+  <Note>
+    This asynchronous behaviour is by design to maintain high throughput during active production. Do not base real-time control logic on ingredient counts during a run.
+  </Note>
+</Accordion>

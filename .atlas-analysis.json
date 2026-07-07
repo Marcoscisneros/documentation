@@ -1,30 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "projectType": "api-service",
+  "projectName": "Pizzeria Co",
+  "projectDescription": "Industrial pizza factory machinery platform with a REST API for automating and controlling pizza production workflows.",
   "theme": "almond",
-  "name": "Pizzeria Co",
-  "colors": {
-    "primary": "#ef7025",
-    "light": "#eec9bc",
-    "dark": "#4fa1ab"
-  },
-  "favicon": "/favicon.svg",
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:support@pizzeriaco.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Get API Access",
-      "href": "https://pizzeriaco.com/signup"
-    }
-  },
+  "primaryColor": "#ef7025",
+  "lightColor": "#eec9bc",
+  "darkColor": "#4fa1ab",
   "navigation": {
     "tabs": [
       {
@@ -114,7 +95,29 @@
       }
     ]
   },
-  "footer": {
-    "socials": {}
-  }
+  "keyFeatures": [
+    "REST API for controlling pizza factory machinery",
+    "Recipe management — create, update, and delete pizza recipes",
+    "Production run orchestration — start, monitor, and cancel production jobs",
+    "Real-time machine status monitoring",
+    "Ingredient inventory tracking",
+    "API key authentication",
+    "Webhook notifications for production events"
+  ],
+  "publicApiSurface": [
+    "GET /machines — list all machines",
+    "GET /machines/{id} — get machine details",
+    "POST /machines/{id}/start — start a machine",
+    "POST /machines/{id}/stop — stop a machine",
+    "GET /recipes — list recipes",
+    "POST /recipes — create a recipe",
+    "PUT /recipes/{id} — update a recipe",
+    "DELETE /recipes/{id} — delete a recipe",
+    "POST /production/runs — start a production run",
+    "GET /production/runs/{id} — get production run status",
+    "GET /production/runs — list production runs",
+    "POST /production/runs/{id}/cancel — cancel a production run",
+    "GET /ingredients — list ingredients",
+    "GET /ingredients/inventory — get inventory levels"
+  ]
 }

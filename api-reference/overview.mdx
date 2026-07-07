@@ -1,0 +1,124 @@
+---
+title: "Pizzeria Co REST API Reference Overview"
+sidebarTitle: "Overview"
+description: "The Pizzeria Co API is a REST API with JSON request and response bodies. Learn about base URL, versioning, auth, and request format."
+---
+
+The Pizzeria Co API gives you programmatic control over every layer of your pizza factory operation — from managing machines and recipes to triggering production runs and tracking ingredient inventory. All communication happens over HTTPS using standard REST conventions, and every request and response body uses JSON.
+
+## Base URL
+
+All API requests are made to the following base URL:
+
+```
+https://api.pizzeriaco.com/v1
+```
+
+The API version is embedded directly in the URL path. When breaking changes are introduced, a new version (e.g. `/v2`) will be announced alongside a migration guide so you can upgrade on your own timeline without disruption.
+
+## Authentication
+
+Every request must include a Bearer token in the `Authorization` header. You can generate and manage API keys from your Pizzeria Co dashboard.
+
+```http title="Authorization header"
+Authorization: Bearer <your_api_key>
+```
+
+See the [Authentication guide](/authentication) for full details on key scopes, rotation, and best practices.
+
+<Warning>
+  Never expose your API key in client-side code or public repositories. All requests should originate from your server.
+</Warning>
+
+## Request Format
+
+Set the `Content-Type` header to `application/json` on all requests that include a body (`POST`, `PUT`). Requests without a body (e.g. `GET`, `DELETE`) do not require this header.
+
+| Method | Purpose |
+|--------|---------|
+| `GET` | Retrieve a resource or list of resources |
+| `POST` | Create a resource or trigger an action |
+| `PUT` | Update an existing resource |
+| `DELETE` | Delete a resource |
+
+## Response Format
+
+Every response body is a JSON object. Successful list responses wrap results in a named array key that reflects the resource type — for example, a list of machines is returned under the `machines` key.
+
+```json title="Example list response structure"
+{
+  "machines": [
+    { "id": "mch_01hx3k9", "name": "Oven Line A" },
+    { "id": "mch_02jy4m1", "name": "Dough Press B" }
+  ],
+  "next_cursor": "cur_eyJpZCI6Im1jaF8wMmp5NG0xIn0"
+}
+```
+
+## Pagination
+
+List endpoints support cursor-based pagination via two query parameters:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | integer | `20` | Number of results to return. Maximum is `100`. |
+| `cursor` | string | — | Cursor value from the previous response's `next_cursor` field. |
+
+The response includes a `next_cursor` field. When its value is `null`, you have reached the last page.
+
+<Tip>
+  For most list endpoints, a `limit` of `20`–`50` strikes a good balance between payload size and the number of round trips needed to traverse large datasets.
+</Tip>
+
+## IDs
+
+Every resource has a string ID prefixed with a short resource code. This makes it easy to identify a resource type at a glance, even outside the context of an API response.
+
+| Prefix | Resource |
+|--------|----------|
+| `mch_` | Machine |
+| `rec_` | Recipe |
+| `run_` | Production run |
+| `ing_` | Ingredient |
+
+## Timestamps
+
+All timestamps in request and response bodies are formatted as [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) strings in UTC.
+
+```
+2024-05-14T09:32:00Z
+```
+
+## Example Request and Response
+
+The following example retrieves the first two machines in your account.
+
+```bash title="List machines (cURL)"
+curl https://api.pizzeriaco.com/v1/machines?limit=2 \
+  -H "Authorization: Bearer <your_api_key>" \
+  -H "Content-Type: application/json"
+```
+
+```json title="200 OK — response body"
+{
+  "machines": [
+    {
+      "id": "mch_01hx3k9",
+      "name": "Oven Line A",
+      "status": "idle",
+      "created_at": "2024-01-10T08:00:00Z"
+    },
+    {
+      "id": "mch_02jy4m1",
+      "name": "Dough Press B",
+      "status": "running",
+      "created_at": "2024-01-12T11:15:00Z"
+    }
+  ],
+  "next_cursor": "cur_eyJpZCI6Im1jaF8wMmp5NG0xIn0"
+}
+```
+
+<Note>
+  Pass the `next_cursor` value as the `cursor` query parameter in your next request to fetch the following page. When `next_cursor` is `null`, you have retrieved all available results.
+</Note>

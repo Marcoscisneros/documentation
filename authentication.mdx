@@ -1,0 +1,112 @@
+---
+title: "Authentication: API Keys for Pizzeria Co"
+sidebarTitle: "Authentication"
+description: "Learn how to generate, use, and securely store your Pizzeria Co API keys to authenticate every request to the REST API."
+---
+
+The Pizzeria Co API uses API key authentication. Every request you send must include a valid API key in the `Authorization` header — there are no OAuth flows, refresh tokens, or session cookies to manage. Your key identifies your account, determines your access permissions, and is the single credential that secures your integration.
+
+## Getting your API key
+
+API keys are generated from your Pizzeria Co dashboard. Follow these steps to create one:
+
+<Steps>
+  <Step title="Open your dashboard">
+    Log in to your account at [https://dashboard.pizzeriaco.com](https://dashboard.pizzeriaco.com).
+  </Step>
+  <Step title="Navigate to API Keys">
+    Go to **Settings → API Keys** in the left-hand navigation.
+  </Step>
+  <Step title="Create a new key">
+    Click **Create API Key**. Give your key a descriptive name that reflects its purpose or the application it belongs to — for example, `production-scheduler` or `inventory-monitor`. Naming keys makes it easier to rotate or revoke specific integrations later without disrupting others.
+  </Step>
+  <Step title="Copy your key immediately">
+    After creation, the full API key is displayed **only once**. Copy it now and store it somewhere safe. If you lose it, you'll need to revoke it and generate a new one.
+  </Step>
+</Steps>
+
+<Warning>
+  Your API key grants full access to your Pizzeria Co account, including the ability to start production runs, modify recipes, and read inventory data. Treat it like a password — never share it or expose it publicly.
+</Warning>
+
+## Using your API key
+
+Pass your API key as a Bearer token in the `Authorization` header of every request. The examples below show how to do this in common HTTP clients:
+
+<CodeGroup>
+  ```bash title="cURL"
+  curl https://api.pizzeriaco.com/v1/machines \
+    -H "Authorization: Bearer YOUR_API_KEY"
+  ```
+
+  ```python title="Python (requests)"
+  import requests
+
+  api_key = "YOUR_API_KEY"
+  response = requests.get(
+      "https://api.pizzeriaco.com/v1/machines",
+      headers={"Authorization": f"Bearer {api_key}"}
+  )
+  print(response.json())
+  ```
+
+  ```javascript title="JavaScript (fetch)"
+  const response = await fetch('https://api.pizzeriaco.com/v1/machines', {
+    headers: {
+      'Authorization': `Bearer ${process.env.PIZZERIA_API_KEY}`
+    }
+  });
+  const data = await response.json();
+  ```
+</CodeGroup>
+
+<Note>
+  The base URL for all API requests is `https://api.pizzeriaco.com/v1`. All requests must be made over HTTPS — plain HTTP requests will be rejected.
+</Note>
+
+## Key security best practices
+
+Keeping your API key out of the wrong hands is critical to protecting your production environment. Follow these guidelines:
+
+- **Use environment variables.** Load your key from the environment at runtime instead of hardcoding it. In your shell, run `export PIZZERIA_API_KEY="your_key_here"` and reference it as `process.env.PIZZERIA_API_KEY` (JavaScript) or `os.environ["PIZZERIA_API_KEY"]` (Python).
+- **Use a secrets manager in production.** Tools like AWS Secrets Manager, HashiCorp Vault, or GCP Secret Manager are designed to store and rotate credentials securely at scale.
+- **Create separate keys per environment.** Use distinct keys for development, staging, and production so you can revoke one without affecting the others.
+- **Rotate keys regularly.** Generate a new key on a scheduled cadence or immediately after any suspected exposure. Revoke the old key from your dashboard once the new one is deployed.
+
+<Warning>
+  Never commit an API key to source control — not even in a private repository. Use a tool like [git-secrets](https://github.com/awslabs/git-secrets) or a pre-commit hook to prevent accidental commits. If a key is ever exposed in a commit, revoke it immediately from **Settings → API Keys** and issue a replacement.
+</Warning>
+
+<Tip>
+  Add your key name (not the value) to a shared team document so colleagues know which keys exist, what they're used for, and who owns them. This makes auditing and key rotation far easier.
+</Tip>
+
+## Error responses
+
+If your API key is missing, invalid, or lacks the required permissions, the API returns a standard error response. Here's what each authentication-related status code means:
+
+<ResponseField name="401 Unauthorized" type="object">
+  Your request did not include a valid API key, or the key has been revoked. Check that your `Authorization` header is formatted correctly as `Bearer YOUR_API_KEY` and that the key is still active in your dashboard.
+
+  ```json title="401 Response body"
+  {
+    "error": {
+      "code": "unauthorized",
+      "message": "Invalid or missing API key. Provide a valid Bearer token in the Authorization header."
+    }
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="403 Forbidden" type="object">
+  Your API key is valid, but it does not have permission to perform the requested action. This can occur if your account plan does not include access to a specific endpoint, or if the key was created with restricted scopes. Contact [support@pizzeriaco.com](mailto:support@pizzeriaco.com) if you believe this is an error.
+
+  ```json title="403 Response body"
+  {
+    "error": {
+      "code": "forbidden",
+      "message": "Your API key does not have permission to access this resource."
+    }
+  }
+  ```
+</ResponseField>

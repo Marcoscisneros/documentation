@@ -1,0 +1,114 @@
+---
+title: "POST /recipes — Create a New Pizza Recipe"
+sidebarTitle: "Create Recipe"
+description: "POST /recipes creates a new pizza recipe with dough, sauce, topping, and baking parameters. Returns the created recipe with its assigned ID."
+---
+
+Use this endpoint to define a new pizza recipe for use in production runs. You must supply all required parameters — including dough weight, sauce type, at least one topping, oven temperature, and bake duration. On success, the API returns the full recipe object with its assigned ID and an initial version of `1`.
+
+## Endpoint
+
+```
+POST https://api.pizzeriaco.com/v1/recipes
+```
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  A human-readable name for the recipe, such as `"Pepperoni XL"` or `"Veggie Supreme"`.
+</ParamField>
+
+<ParamField body="dough_weight_g" type="integer" required>
+  Dough weight in grams. Must be between `100` and `2000`.
+</ParamField>
+
+<ParamField body="sauce" type="string" required>
+  Sauce type for the recipe. Accepted values: `tomato`, `white`, `pesto`, `bbq`.
+</ParamField>
+
+<ParamField body="toppings" type="array of strings" required>
+  List of topping ingredient names. Must contain at least one item.
+</ParamField>
+
+<ParamField body="bake_temp_celsius" type="integer" required>
+  Oven temperature in degrees Celsius. Must be between `200` and `400`.
+</ParamField>
+
+<ParamField body="bake_duration_seconds" type="integer" required>
+  Bake time in seconds. Must be between `60` and `900`.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="id" type="string">
+  Unique identifier assigned to the new recipe (e.g. `rec_01hx4mn`).
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The recipe name you provided.
+</ResponseField>
+
+<ResponseField name="dough_weight_g" type="integer">
+  Dough weight in grams.
+</ResponseField>
+
+<ResponseField name="sauce" type="string">
+  Sauce type for the recipe.
+</ResponseField>
+
+<ResponseField name="toppings" type="array of strings">
+  List of topping ingredients.
+</ResponseField>
+
+<ResponseField name="bake_temp_celsius" type="integer">
+  Oven temperature in degrees Celsius.
+</ResponseField>
+
+<ResponseField name="bake_duration_seconds" type="integer">
+  Total bake time in seconds.
+</ResponseField>
+
+<ResponseField name="version" type="integer">
+  Recipe version number. Always `1` for a newly created recipe.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the recipe was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of the most recent update. Equal to `created_at` for new recipes.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.pizzeriaco.com/v1/recipes \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Pepperoni XL",
+    "dough_weight_g": 400,
+    "sauce": "tomato",
+    "toppings": ["mozzarella", "pepperoni"],
+    "bake_temp_celsius": 275,
+    "bake_duration_seconds": 210
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": "rec_01hx4mn",
+  "name": "Pepperoni XL",
+  "dough_weight_g": 400,
+  "sauce": "tomato",
+  "toppings": ["mozzarella", "pepperoni"],
+  "bake_temp_celsius": 275,
+  "bake_duration_seconds": 210,
+  "version": 1,
+  "created_at": "2024-03-15T09:30:00Z",
+  "updated_at": "2024-03-15T09:30:00Z"
+}
+```

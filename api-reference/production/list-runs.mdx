@@ -1,0 +1,84 @@
+---
+title: "GET /production/runs — List Production Runs"
+sidebarTitle: "List Runs"
+description: "GET /production/runs returns a paginated list of production runs. Filter by status to find active, completed, or failed runs."
+---
+
+Use this endpoint to retrieve a paginated list of production runs across your factory. You can filter by status to surface runs that need attention — for example, polling for `failed` runs as part of an operational dashboard, or fetching all `running` runs to display live progress.
+
+## Endpoint
+
+```
+GET /production/runs
+```
+
+## Query Parameters
+
+<ParamField query="status" type="string">
+  Filter results to runs in a specific state. One of: `queued`, `running`, `paused`, `completed`, `failed`, or `cancelled`. Omit to return runs in all states.
+</ParamField>
+
+<ParamField query="recipe_id" type="string">
+  Filter results to runs that use a specific recipe.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="20">
+  The maximum number of runs to return per page. Accepts values between `1` and `100`.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  A pagination cursor returned as `next_cursor` from a previous response. Pass this value to retrieve the next page of results.
+</ParamField>
+
+## Response
+
+<ResponseField name="runs" type="array of objects">
+  The list of production runs matching your query. Each object contains the full run details: `id`, `recipe_id`, `recipe_version`, `quantity`, `quantity_completed`, `machine_ids`, `status`, `started_at`, `completed_at`, and `error`.
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  A cursor to pass as the `cursor` query parameter to retrieve the next page. `null` when you have reached the last page.
+</ResponseField>
+
+<ResponseField name="total" type="integer">
+  The total number of runs matching your query, across all pages.
+</ResponseField>
+
+## Code Example
+
+```bash
+curl 'https://api.pizzeriaco.com/v1/production/runs?status=running' \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response
+
+```json
+{
+  "runs": [
+    {
+      "id": "run_01hx5qp",
+      "recipe_id": "rec_01hx4mn",
+      "recipe_version": 1,
+      "quantity": 500,
+      "quantity_completed": 237,
+      "machine_ids": ["mch_01hx3k9", "mch_01hx3ka"],
+      "status": "running",
+      "started_at": "2024-03-15T10:00:00Z",
+      "completed_at": null,
+      "error": null
+    }
+  ],
+  "next_cursor": null,
+  "total": 1
+}
+```
+
+## Pagination
+
+Results are ordered by `started_at` descending (most recent first). When `next_cursor` is not `null`, pass it as the `cursor` parameter in your next request to fetch the following page:
+
+```bash
+curl 'https://api.pizzeriaco.com/v1/production/runs?limit=20&cursor=cur_01hx7ab' \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```

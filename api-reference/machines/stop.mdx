@@ -1,0 +1,80 @@
+---
+title: "POST /machines/{id}/stop — Stop a Running Machine"
+sidebarTitle: "Stop Machine"
+description: "POST /machines/{id}/stop gracefully stops a running machine and transitions it to idle status. Safe to call on already-idle machines."
+---
+
+Use this endpoint to gracefully stop a running machine and return it to `idle` status. This call is idempotent — if the machine is already `idle`, the API returns the current machine object without error. Before stopping a machine mid-operation, be aware that doing so during an active production run will cause that run to fail.
+
+<Warning>
+  If the machine is part of an active production run, stopping it will immediately fail the run. Verify there are no active runs on this machine before issuing a stop command.
+</Warning>
+
+## Endpoint
+
+```
+POST https://api.pizzeriaco.com/v1/machines/{id}/stop
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the machine to stop (e.g. `mch_01hx3k9`).
+</ParamField>
+
+## Request Body
+
+No request body is required for this endpoint.
+
+## Response Fields
+
+The response returns the updated machine object with `status` set to `idle`.
+
+<ResponseField name="id" type="string">
+  Unique identifier for the machine.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Human-readable name assigned to the machine.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  The machine type, such as `dough_mixer` or `oven`.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Updated operational status. Will be `idle` on success.
+</ResponseField>
+
+<ResponseField name="capacity_kg" type="number">
+  Maximum load capacity of the machine in kilograms.
+</ResponseField>
+
+<ResponseField name="location" type="string">
+  Physical location or production line the machine is assigned to.
+</ResponseField>
+
+<ResponseField name="last_maintenance_at" type="string">
+  ISO 8601 timestamp of the most recent maintenance event.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.pizzeriaco.com/v1/machines/mch_01hx3k9/stop \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Example Response
+
+```json
+{
+  "id": "mch_01hx3k9",
+  "name": "Dough Mixer Pro 3000",
+  "type": "dough_mixer",
+  "status": "idle",
+  "capacity_kg": 50,
+  "location": "Line A",
+  "last_maintenance_at": "2024-03-01T08:00:00Z"
+}
+```

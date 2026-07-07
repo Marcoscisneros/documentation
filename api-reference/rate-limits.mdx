@@ -1,0 +1,123 @@
+---
+title: "API Rate Limits for the Pizzeria Co Platform"
+sidebarTitle: "Rate Limits"
+description: "Understand Pizzeria Co API rate limits, how to read rate limit headers, and best practices for staying within limits in production integrations."
+---
+
+The Pizzeria Co API enforces rate limits to keep the platform stable and performant for everyone. Limits are applied per API key, so each key you create has its own independent request budget. Understanding how limits work — and how to read the headers on every response — lets you build integrations that stay well within bounds even under production load.
+
+## Limits
+
+Each API key is allowed **1,000 requests per minute**. The window resets on a rolling basis, tracked by a Unix timestamp returned in the response headers.
+
+<Note>
+  If your integration consistently approaches this limit, consider whether polling or redundant requests can be replaced with smarter caching. See [Best Practices](#best-practices) below.
+</Note>
+
+## Rate Limit Headers
+
+Every API response includes three headers that tell you exactly where you stand in the current window.
+
+| Header | Type | Description |
+|--------|------|-------------|
+| `X-RateLimit-Limit` | integer | The total number of requests allowed per window for your API key. |
+| `X-RateLimit-Remaining` | integer | The number of requests you have left in the current window. |
+| `X-RateLimit-Reset` | integer | Unix timestamp (seconds) indicating when the current window resets and your allowance is restored. |
+
+Reading these headers proactively — rather than waiting for a `429` — is the most reliable way to stay within limits.
+
+## Handling a 429 Response
+
+When you exceed the limit, the API returns a `429 Too Many Requests` response. In addition to the standard rate limit headers, the response includes a `Retry-After` header specifying how many seconds you must wait before your next request will succeed.
+
+```json title="429 Too Many Requests — response body"
+{
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "Too many requests. Please wait before retrying.",
+    "details": {
+      "retry_after_seconds": 30
+    }
+  }
+}
+```
+
+<Warning>
+  Do not immediately retry a request after receiving a `429`. Retrying without waiting will not succeed and simply burns your remaining request budget once the window resets. Always respect the `Retry-After` value.
+</Warning>
+
+## Reading Rate Limit Headers
+
+The examples below show how to inspect rate limit headers from a response.
+
+```bash title="Reading headers with cURL"
+curl -i https://api.pizzeriaco.com/v1/machines \
+  -H "Authorization: Bearer <your_api_key>"
+
+# Relevant lines from the response headers:
+# X-RateLimit-Limit: 1000
+# X-RateLimit-Remaining: 847
+# X-RateLimit-Reset: 1715679120
+```
+
+```javascript title="Reading headers in JavaScript (fetch)"
+const response = await fetch("https://api.pizzeriaco.com/v1/machines", {
+  headers: {
+    "Authorization": "Bearer <your_api_key>",
+  },
+});
+
+const limit     = response.headers.get("X-RateLimit-Limit");
+const remaining = response.headers.get("X-RateLimit-Remaining");
+const reset     = response.headers.get("X-RateLimit-Reset");
+
+console.log(`Rate limit: ${remaining}/${limit} remaining`);
+console.log(`Window resets at: ${new Date(reset * 1000).toISOString()}`);
+
+if (response.status === 429) {
+  const retryAfter = response.headers.get("Retry-After");
+  console.warn(`Rate limited. Retry after ${retryAfter} seconds.`);
+
+  await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+  // then retry your request
+}
+```
+
+## Best Practices
+
+Following these practices helps you stay comfortably within rate limits, even as your integration scales.
+
+**Cache static and slow-changing resources.**
+Machine configurations and ingredient lists change infrequently. Fetch them once and cache the results in memory or a local store rather than requesting them on every operation. Invalidate the cache on a schedule (e.g. every few minutes) rather than polling continuously.
+
+**Poll run status at a sensible interval.**
+For production monitoring, checking a run's status every **5–10 seconds** is sufficient for operational purposes. Polling more frequently than this rarely provides actionable value and burns through your request budget quickly.
+
+**Implement exponential backoff on 429 responses.**
+If you do hit a rate limit, retry with exponentially increasing delays rather than a fixed wait. This smooths out bursts of retries that could otherwise cause repeated 429s.
+
+```javascript title="Exponential backoff helper (JavaScript)"
+async function fetchWithBackoff(url, options, maxRetries = 4) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, options);
+
+    if (response.status !== 429) {
+      return response; // success or non-rate-limit error — return as-is
+    }
+
+    if (attempt === maxRetries) {
+      return response; // exhausted retries, surface the 429
+    }
+
+    const retryAfter = parseInt(response.headers.get("Retry-After") ?? "1", 10);
+    const backoff = Math.max(retryAfter, Math.pow(2, attempt)) * 1000;
+    console.warn(`Rate limited. Retrying in ${backoff / 1000}s (attempt ${attempt + 1}/${maxRetries})`);
+
+    await new Promise((resolve) => setTimeout(resolve, backoff));
+  }
+}
+```
+
+<Tip>
+  If you are building a high-throughput integration and expect to regularly approach the 1,000 requests/minute limit, reach out to [support@pizzeriaco.com](mailto:support@pizzeriaco.com) to discuss a limit increase for your account.
+</Tip>

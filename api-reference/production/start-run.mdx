@@ -1,0 +1,107 @@
+---
+title: "POST /production/runs — Start a Production Run"
+sidebarTitle: "Start Run"
+description: "POST /production/runs creates and starts a pizza production run, assigning a recipe and quantity to one or more factory machines."
+---
+
+Use this endpoint to kick off a new production run on your factory floor. You provide a recipe, the number of pizzas to produce, and the machines to assign — Pizzeria Co handles the rest, sequencing work across your selected machines and tracking progress in real time.
+
+## Endpoint
+
+```
+POST /production/runs
+```
+
+## Request
+
+<ParamField body="recipe_id" type="string" required>
+  The ID of the recipe to use for this run. The API snapshots the recipe at the current version when the run starts — subsequent recipe edits do not affect an in-progress run.
+</ParamField>
+
+<ParamField body="quantity" type="integer" required>
+  The total number of pizzas to produce. Must be at least `1`.
+</ParamField>
+
+<ParamField body="machine_ids" type="array of strings" required>
+  An array of machine IDs to assign to this run. Must contain at least one ID. Every machine in the list must be in an `idle` state at the time of the request — see the `409 machine_not_idle` error below.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  The unique ID of the newly created production run (e.g. `run_01hx5qp`).
+</ResponseField>
+
+<ResponseField name="recipe_id" type="string">
+  The ID of the recipe assigned to this run.
+</ResponseField>
+
+<ResponseField name="recipe_version" type="integer">
+  The snapshot version of the recipe captured when the run was created.
+</ResponseField>
+
+<ResponseField name="quantity" type="integer">
+  The total number of pizzas requested for this run.
+</ResponseField>
+
+<ResponseField name="quantity_completed" type="integer">
+  The number of pizzas produced so far. Starts at `0` and increments as machines complete units.
+</ResponseField>
+
+<ResponseField name="machine_ids" type="array of strings">
+  The IDs of the machines assigned to this run.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The current state of the run. One of: `queued`, `running`, `paused`, `completed`, `failed`, or `cancelled`.
+</ResponseField>
+
+<ResponseField name="started_at" type="string">
+  ISO 8601 timestamp of when the run was created and queued.
+</ResponseField>
+
+<ResponseField name="completed_at" type="string">
+  ISO 8601 timestamp of when the run finished. `null` if the run has not yet completed.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  A description of the error if the run entered a `failed` state. `null` if no error has occurred.
+</ResponseField>
+
+## Code Example
+
+```bash
+curl -X POST https://api.pizzeriaco.com/v1/production/runs \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "recipe_id": "rec_01hx4mn",
+    "quantity": 500,
+    "machine_ids": ["mch_01hx3k9", "mch_01hx3ka"]
+  }'
+```
+
+### Response
+
+```json
+{
+  "id": "run_01hx5qp",
+  "recipe_id": "rec_01hx4mn",
+  "recipe_version": 1,
+  "quantity": 500,
+  "quantity_completed": 0,
+  "machine_ids": ["mch_01hx3k9", "mch_01hx3ka"],
+  "status": "queued",
+  "started_at": "2024-03-15T10:00:00Z",
+  "completed_at": null,
+  "error": null
+}
+```
+
+## Errors
+
+| Status | Code | Description |
+|--------|------|-------------|
+| `404` | — | The `recipe_id` you provided does not exist. |
+| `409` | `machine_not_idle` | One or more machines in `machine_ids` are not currently idle. Check each machine's status before starting a run. |
+| `409` | `insufficient_inventory` | Your current ingredient inventory is insufficient to complete the requested quantity. Review stock levels using [GET /ingredients/inventory](/api-reference/ingredients/inventory) before retrying. |

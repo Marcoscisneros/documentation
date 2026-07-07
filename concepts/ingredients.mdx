@@ -1,0 +1,59 @@
+---
+title: "Ingredient Inventory: Track Your Pizza Raw Materials"
+sidebarTitle: "Ingredients"
+description: "See how Pizzeria Co tracks ingredient types, units of measurement, and current inventory levels to keep your production lines running."
+---
+
+Ingredients represent the raw materials that your machines consume during production runs. The API tracks each ingredient's identity, unit of measurement, and category separately from its inventory level — giving you a clean separation between what an ingredient *is* and how much of it you currently *have*. Use ingredient records to build purchasing workflows, set low-stock alerts, and ensure your production lines never stop unexpectedly due to missing supplies.
+
+## Ingredient fields
+
+The ingredient object describes a material registered in your workspace.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Unique identifier for the ingredient, e.g. `ing_01hx6rs` |
+| `name` | string | Machine-readable ingredient name, e.g. `mozzarella`, `tomato_sauce`, `00_flour` |
+| `unit` | string | Unit of measure used for this ingredient, e.g. `kg`, `liters` |
+| `category` | enum | Production stage this ingredient belongs to (see below) |
+
+### Ingredient categories
+
+| Category | Description |
+|---|---|
+| `dough` | Dry and wet ingredients used by the dough mixer, e.g. flour, yeast, water |
+| `sauce` | Sauce bases applied at the sauce applicator station |
+| `topping` | Cheese, vegetables, meats, and other toppings applied at the topping station |
+| `packaging` | Boxes, labels, wraps, and other materials consumed at the packaging station |
+
+## Inventory record fields
+
+Inventory levels are returned separately from ingredient metadata via `GET /ingredients/inventory`. Each record pairs an ingredient with its current stock information.
+
+| Field | Type | Description |
+|---|---|---|
+| `ingredient_id` | string | ID of the ingredient this record describes |
+| `quantity_available` | number | Current stock on hand, expressed in the ingredient's `unit` |
+| `low_stock_threshold` | number | The quantity level at which `is_low_stock` flips to `true` |
+| `is_low_stock` | boolean | `true` when `quantity_available` is at or below `low_stock_threshold` |
+| `last_restocked_at` | string | ISO 8601 timestamp of the most recent stock addition |
+
+## Example inventory record
+
+```json
+{
+  "ingredient_id": "ing_01hx6rs",
+  "quantity_available": 38.5,
+  "low_stock_threshold": 50.0,
+  "is_low_stock": true,
+  "last_restocked_at": "2024-11-28T07:15:00Z"
+}
+```
+
+<Warning>
+  Inventory levels are decremented in real time as production runs consume ingredients. If a run is cancelled, the platform does **not** automatically restore the quantities already consumed before cancellation. Reconcile your inventory manually or via your own restocking workflow after cancelling a run that was partially underway.
+</Warning>
+
+<Tip>
+  Set `low_stock_threshold` generously — high enough to give your team time to reorder and receive stock before the ingredient runs out entirely. A good starting point is at least one full production run's worth of consumption above zero. You can update thresholds at any time via `PATCH /ingredients/{id}/inventory`.
+</Tip>

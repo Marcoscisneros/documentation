@@ -1,0 +1,156 @@
+---
+title: "Frequently Asked Questions — Pizzeria Co API"
+sidebarTitle: "FAQ"
+description: "Answers to common questions about the Pizzeria Co API, including machine types, recipe versioning, production limits, and data retention."
+---
+
+Find quick answers to the most common questions about using the Pizzeria Co platform. If you don't see what you're looking for here, reach out to the support team — contact details are at the bottom of this page.
+
+## Machines
+
+<Accordion title="What machine types does the API support?">
+  The Pizzeria Co API supports the following machine types, each representing a distinct stage in the pizza production workflow:
+
+  | Type | Role |
+  |---|---|
+  | `dough_mixer` | Mixes and kneads dough to recipe specifications |
+  | `sauce_applicator` | Applies sauce evenly across the dough base |
+  | `topping_station` | Distributes toppings according to the recipe |
+  | `oven` | Bakes pizzas at a controlled temperature and duration |
+  | `cutting_station` | Cuts finished pizzas into the configured portion count |
+  | `packaging_station` | Packages completed pizzas for dispatch |
+
+  Each machine type exposes its own set of capabilities and configurable parameters. When creating or validating a recipe, ensure the steps in your recipe map to machine types that are registered and available in your account.
+</Accordion>
+
+<Accordion title="Can I assign a machine to multiple production runs at the same time?">
+  No. A machine can only be assigned to **one active production run at a time**. Attempting to assign a busy machine to a second run will return a `409 Conflict` error.
+
+  Before assigning a machine to a new run, confirm it has an `idle` status:
+
+  ```http
+  GET /machines/{machine_id}
+  ```
+
+  Once the machine's `status` field returns `idle`, it is ready to be assigned. If it is still `running`, wait for the current run to complete or cancel it explicitly before proceeding.
+</Accordion>
+
+<Accordion title="How do I register a new physical machine?">
+  Machine registration is handled through the [Pizzeria Co dashboard](https://dashboard.pizzeriaco.com) — it is not available via the API. Follow the registration flow in the dashboard to connect your physical machine to your account.
+
+  Once registered, the machine appears immediately in the machines list:
+
+  ```http
+  GET /machines
+  ```
+
+  You can then assign it to production runs, check its status, and control it through the API as normal.
+
+  <Note>
+    Make sure the machine is powered on and connected to your network before registering it in the dashboard. The dashboard validates connectivity as part of the registration process.
+  </Note>
+</Accordion>
+
+---
+
+## Production Runs
+
+<Accordion title="What happens to a production run if a machine fails mid-run?">
+  If a machine goes offline or encounters a fault during a production run, the run automatically transitions to `failed` status. No further pizzas are produced for that run.
+
+  To find out what went wrong, fetch the run and inspect the `error` field:
+
+  ```http
+  GET /production-runs/{run_id}
+  ```
+
+  The `error` field provides a description of the failure, which will help you diagnose whether the issue is hardware-related, connectivity-related, or caused by a depleted ingredient.
+
+  Once you have resolved the underlying machine issue, create a **new** production run to continue production. Failed runs cannot be resumed.
+
+  <Warning>
+    Do not attempt to restart the machine before reading the `error` field. Understanding the failure reason first reduces the risk of repeated faults.
+  </Warning>
+</Accordion>
+
+<Accordion title="Is there a limit on how many pizzas I can produce in a single run?">
+  There is no hard API-level limit on the `quantity` field when creating a production run. You can set it as high as your operation requires.
+
+  In practice, the constraints you will encounter are:
+
+  - **Machine capacity** — Each machine type has a physical throughput ceiling. Very large quantities may require sequencing runs or using multiple machines.
+  - **Ingredient inventory** — The run will fail if ingredients are depleted before the target quantity is reached. Check current inventory levels with `GET /ingredients` before scheduling large runs.
+
+  <Tip>
+    For very large production targets, consider splitting the work across multiple runs. This gives you finer-grained visibility into progress and makes it easier to recover from partial failures.
+  </Tip>
+</Accordion>
+
+<Accordion title="How long is production run data retained?">
+  Production run records — including status history, error details, and the recipe version snapshot — are retained for **90 days** after the run reaches a terminal status (`completed` or `failed`).
+
+  After 90 days, the records are permanently deleted and cannot be recovered.
+
+  If you need to keep production history beyond this window, export the data before it expires:
+
+  ```http
+  GET /production-runs?completed_before={ISO8601_date}
+  ```
+
+  <Warning>
+    Set up a scheduled export job if your business or compliance requirements demand longer retention. The API does not send expiry notifications before records are deleted.
+  </Warning>
+</Accordion>
+
+---
+
+## Recipes
+
+<Accordion title="How does recipe versioning work?">
+  Every time you update a recipe using `PUT /recipes/{recipe_id}`, the recipe's `version` number increments automatically. You do not need to manage version numbers manually.
+
+  Production runs capture a **snapshot** of the recipe version at the time they are created. This means:
+
+  - Updating a recipe has **no effect** on runs that are already active or queued — they continue using the version they were started with.
+  - Completed runs retain a reference to the exact recipe version used, preserving an accurate production history.
+  - Only **new** runs created after an update will use the latest recipe version.
+
+  <Note>
+    If you need to roll back a recipe change, you can re-apply the previous configuration via `PUT /recipes/{recipe_id}`. This creates a new version with the restored values.
+  </Note>
+</Accordion>
+
+---
+
+## Sandbox & Testing
+
+<Accordion title="Can I use the API in a test or sandbox environment?">
+  Yes. Pizzeria Co provides a full sandbox environment for development and testing that does not control any physical machines.
+
+  To use it, point your requests to the sandbox base URL:
+
+  ```
+  https://sandbox.api.pizzeriaco.com/v1
+  ```
+
+  You will also need a **sandbox API key**, which you can obtain from the [Pizzeria Co dashboard](https://dashboard.pizzeriaco.com) under API Keys → Sandbox.
+
+  The sandbox environment mirrors the production API surface exactly, so you can develop and validate your integration with confidence before going live.
+
+  <Tip>
+    Use separate sandbox and production API keys in your codebase — ideally loaded from environment variables — so you can never accidentally run test workloads against live machines.
+  </Tip>
+</Accordion>
+
+---
+
+## Support
+
+<Accordion title="How do I get support?">
+  The Pizzeria Co support team is available through the following channels:
+
+  - **Email:** [support@pizzeriaco.com](mailto:support@pizzeriaco.com)
+  - **Dashboard chat:** Use the chat widget in the bottom-right corner of the [Pizzeria Co dashboard](https://dashboard.pizzeriaco.com) to start a live conversation.
+
+  When contacting support about a specific issue, include the relevant `run_id`, `machine_id`, or request details to help the team investigate quickly.
+</Accordion>

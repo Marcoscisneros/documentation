@@ -1,0 +1,70 @@
+---
+title: "GET /machines/{id} — Retrieve a Single Machine"
+sidebarTitle: "Get Machine"
+description: "GET /machines/{id} returns full details for a single registered machine, including its current status, type, and capacity."
+---
+
+Use this endpoint to fetch the full details of a specific machine by its unique ID. This is useful when you need to check a machine's current status before issuing a start or stop command, or when you want to inspect its capacity and maintenance history in isolation.
+
+## Endpoint
+
+```
+GET https://api.pizzeriaco.com/v1/machines/{id}
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the machine to retrieve (e.g. `mch_01hx3k9`).
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="id" type="string">
+  Unique identifier for the machine.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Human-readable name assigned to the machine.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  The machine type, such as `dough_mixer` or `oven`.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current operational status: `idle`, `running`, `maintenance`, `error`, or `offline`.
+</ResponseField>
+
+<ResponseField name="capacity_kg" type="number">
+  Maximum load capacity of the machine in kilograms.
+</ResponseField>
+
+<ResponseField name="location" type="string">
+  Physical location or production line the machine is assigned to.
+</ResponseField>
+
+<ResponseField name="last_maintenance_at" type="string">
+  ISO 8601 timestamp of the most recent maintenance event.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl https://api.pizzeriaco.com/v1/machines/mch_01hx3k9 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Example Response
+
+```json
+{
+  "id": "mch_01hx3k9",
+  "name": "Dough Mixer Pro 3000",
+  "type": "dough_mixer",
+  "status": "idle",
+  "capacity_kg": 50,
+  "location": "Line A",
+  "last_maintenance_at": "2024-03-01T08:00:00Z"
+}
+```

@@ -1,0 +1,101 @@
+---
+title: "Track and Manage Pizza Ingredient Inventory"
+sidebarTitle: "Manage Ingredients"
+description: "Use the Pizzeria Co API to list available ingredients, monitor inventory levels, and identify low-stock items before they halt production."
+---
+
+Ingredient availability directly determines whether a production run can complete successfully. The Pizzeria Co API exposes your full ingredient catalog and real-time inventory levels so you can programmatically monitor stock, identify shortfalls before they cause problems, and plan restocking around your production schedule. Integrating these checks into your pre-run workflow helps you avoid costly mid-run stoppages.
+
+<Steps>
+
+  <Step title="List all ingredients">
+    Fetch your complete ingredient catalog with a `GET` request to `/ingredients`. The response contains the stable `id`, display `name`, measurement `unit`, and `category` for every ingredient registered in your account.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl https://api.pizzeriaco.com/v1/ingredients \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    ```json Example Response
+    {
+      "ingredients": [
+        {"id": "ing_01hx6rs", "name": "00_flour", "unit": "kg", "category": "dough"},
+        {"id": "ing_01hx6rt", "name": "tomato_sauce", "unit": "liters", "category": "sauce"},
+        {"id": "ing_01hx6ru", "name": "mozzarella", "unit": "kg", "category": "topping"}
+      ]
+    }
+    ```
+
+    Use `ingredient_id` values from this list to cross-reference entries in the inventory endpoint.
+  </Step>
+
+  <Step title="Check inventory levels">
+    Fetch current stock quantities with a `GET` request to `/ingredients/inventory`. Each inventory entry reports how much of a given ingredient is currently available alongside its configured low-stock threshold.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl https://api.pizzeriaco.com/v1/ingredients/inventory \
+      -H "Authorization: Bearer YOUR_API_KEY"
+    ```
+
+    </CodeGroup>
+
+    ```json Example Response
+    {
+      "inventory": [
+        {
+          "ingredient_id": "ing_01hx6rs",
+          "name": "00_flour",
+          "unit": "kg",
+          "quantity_available": 850.5,
+          "low_stock_threshold": 100,
+          "is_low_stock": false,
+          "last_restocked_at": "2024-03-14T06:00:00Z"
+        },
+        {
+          "ingredient_id": "ing_01hx6ru",
+          "name": "mozzarella",
+          "unit": "kg",
+          "quantity_available": 42.0,
+          "low_stock_threshold": 50,
+          "is_low_stock": true,
+          "last_restocked_at": "2024-03-12T06:00:00Z"
+        }
+      ]
+    }
+    ```
+
+    The `quantity_available` field reflects the current on-hand quantity in the ingredient's native unit. The `last_restocked_at` timestamp shows when stock was last replenished.
+  </Step>
+
+  <Step title="Identify low-stock items">
+    Scan the `inventory` array for any entry where `"is_low_stock": true`. These ingredients have fallen below their configured `low_stock_threshold` and need restocking before you start a large run.
+
+    In the example above, `mozzarella` has only `42.0 kg` remaining against a threshold of `50 kg`, so `is_low_stock` is `true`. Any recipe requiring mozzarella is at risk if production volume is high.
+
+    <Tip>
+      Run an inventory check as an automated pre-flight step in your production pipeline. If any required ingredient for your target recipe returns `is_low_stock: true`, halt the workflow and trigger a restocking alert before proceeding.
+    </Tip>
+  </Step>
+
+  <Step title="Plan restocking using thresholds">
+    Use the `low_stock_threshold` value to understand the minimum safe quantity for each ingredient. The threshold is set per ingredient in your account configuration and represents the point below which production reliability is at risk.
+
+    To calculate how much stock you need to order, subtract `quantity_available` from your desired buffer level. For example, if your target buffer for mozzarella is `200 kg` and you currently have `42 kg`:
+
+    ```
+    reorder_quantity = target_buffer - quantity_available
+    reorder_quantity = 200 - 42 = 158 kg
+    ```
+
+    <Warning>
+      Pizzeria Co tracks inventory consumption automatically as production runs complete — quantities decrease in real time without any manual input from you. However, physical restocking arrivals must be recorded separately through your inventory management system or the Pizzeria Co dashboard. The API does not currently expose a restocking endpoint.
+    </Warning>
+  </Step>
+
+</Steps>

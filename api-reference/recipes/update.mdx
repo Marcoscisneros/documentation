@@ -1,0 +1,115 @@
+---
+title: "PUT /recipes/{id} — Update an Existing Recipe"
+sidebarTitle: "Update Recipe"
+description: "PUT /recipes/{id} updates a recipe's parameters and increments its version. Active production runs continue using their original recipe version."
+---
+
+Use this endpoint to modify any combination of a recipe's parameters. You only need to include the fields you want to change — any fields you omit remain unchanged. Each successful update increments the recipe's `version` by 1, giving you a clear history of changes. Any production runs already in progress continue using the recipe version they started with and are not affected by the update.
+
+## Endpoint
+
+```
+PUT https://api.pizzeriaco.com/v1/recipes/{id}
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the recipe to update (e.g. `rec_01hx4mn`).
+</ParamField>
+
+## Request Body
+
+All fields are optional. Include only the fields you want to update.
+
+<ParamField body="name" type="string">
+  Updated human-readable name for the recipe.
+</ParamField>
+
+<ParamField body="dough_weight_g" type="integer">
+  Updated dough weight in grams. Must be between `100` and `2000`.
+</ParamField>
+
+<ParamField body="sauce" type="string">
+  Updated sauce type. Accepted values: `tomato`, `white`, `pesto`, `bbq`.
+</ParamField>
+
+<ParamField body="toppings" type="array of strings">
+  Updated list of topping ingredient names. Replaces the existing toppings list entirely. Must contain at least one item if provided.
+</ParamField>
+
+<ParamField body="bake_temp_celsius" type="integer">
+  Updated oven temperature in degrees Celsius. Must be between `200` and `400`.
+</ParamField>
+
+<ParamField body="bake_duration_seconds" type="integer">
+  Updated bake time in seconds. Must be between `60` and `900`.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="id" type="string">
+  Unique identifier for the recipe.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Current recipe name.
+</ResponseField>
+
+<ResponseField name="dough_weight_g" type="integer">
+  Dough weight in grams.
+</ResponseField>
+
+<ResponseField name="sauce" type="string">
+  Sauce type for the recipe.
+</ResponseField>
+
+<ResponseField name="toppings" type="array of strings">
+  List of topping ingredients.
+</ResponseField>
+
+<ResponseField name="bake_temp_celsius" type="integer">
+  Oven temperature in degrees Celsius.
+</ResponseField>
+
+<ResponseField name="bake_duration_seconds" type="integer">
+  Total bake time in seconds.
+</ResponseField>
+
+<ResponseField name="version" type="integer">
+  Incremented version number reflecting this update.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the recipe was originally created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of this update.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X PUT https://api.pizzeriaco.com/v1/recipes/rec_01hx4mn \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"bake_duration_seconds": 220}'
+```
+
+## Example Response
+
+```json
+{
+  "id": "rec_01hx4mn",
+  "name": "Pepperoni XL",
+  "dough_weight_g": 400,
+  "sauce": "tomato",
+  "toppings": ["mozzarella", "pepperoni"],
+  "bake_temp_celsius": 275,
+  "bake_duration_seconds": 220,
+  "version": 2,
+  "created_at": "2024-03-15T09:30:00Z",
+  "updated_at": "2024-03-15T11:15:00Z"
+}
+```

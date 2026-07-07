@@ -1,0 +1,53 @@
+---
+title: "Pizza Recipes: Define Your Production Blueprints"
+sidebarTitle: "Recipes"
+description: "Understand how Pizzeria Co recipes define every parameter of a pizza — from dough weight and toppings to baking temperature and duration."
+---
+
+A recipe is the single source of truth for how a pizza is made. It encodes every production parameter — dough weight, sauce type, toppings, oven temperature, and bake duration — into a reusable blueprint that you attach to a production run. When you start a run, the platform reads the recipe and uses its values to drive each machine in the assigned production line. Keeping your recipes accurate and well-named is key to consistent output across your factory.
+
+## Recipe fields
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Unique identifier for the recipe, e.g. `rec_01hx4mn` |
+| `name` | string | Human-readable display name for the recipe |
+| `dough_weight_g` | integer | Target dough weight per pizza base, in grams |
+| `sauce` | string | Sauce type applied to the base, e.g. `tomato`, `white`, `pesto` |
+| `toppings` | array of strings | Ordered list of toppings applied at the topping station |
+| `bake_temp_celsius` | integer | Target oven temperature in degrees Celsius |
+| `bake_duration_seconds` | integer | Time the pizza spends in the oven, in seconds |
+| `created_at` | string | ISO 8601 timestamp of when the recipe was first created |
+| `updated_at` | string | ISO 8601 timestamp of when the recipe was last modified |
+
+## Example recipe object
+
+```json
+{
+  "id": "rec_01hx4mn",
+  "name": "Margherita 12in Classic",
+  "dough_weight_g": 280,
+  "sauce": "tomato",
+  "toppings": [
+    "mozzarella",
+    "fresh_basil",
+    "olive_oil"
+  ],
+  "bake_temp_celsius": 285,
+  "bake_duration_seconds": 420,
+  "created_at": "2024-09-03T14:22:00Z",
+  "updated_at": "2024-11-20T09:05:00Z"
+}
+```
+
+## Recipe versioning
+
+Recipes are versioned automatically. Every time you update a recipe — changing the bake temperature, swapping a topping, or adjusting dough weight — Pizzeria Co creates a new version and increments the `version` number. Existing and in-progress production runs are always pinned to the version they were started with, so an update never disrupts an active run.
+
+<Note>
+  When you retrieve a production run, it includes a `recipe_version` field that tells you exactly which version of the recipe was used. This gives you a reliable audit trail for quality control and lets you trace any batch back to its exact specifications.
+</Note>
+
+<Tip>
+  Adopt a consistent naming convention that encodes size and variant directly in the recipe name — for example, `Margherita 12in Classic` or `Pepperoni 9in Thin`. Clear names make it much easier to select the right recipe when creating production runs through the API or any dashboard integration you build on top of it.
+</Tip>
