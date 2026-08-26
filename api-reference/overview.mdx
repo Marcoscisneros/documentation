@@ -4,13 +4,15 @@ sidebarTitle: "Overview"
 description: "The Pizzeria Co API is a REST API with JSON request and response bodies. Learn about base URL, versioning, auth, and request format."
 ---
 
+ojospgjoiisjfpsdpfjspjf
+
 The Pizzeria Co API gives you programmatic control over every layer of your pizza factory operation — from managing machines and recipes to triggering production runs and tracking ingredient inventory. All communication happens over HTTPS using standard REST conventions, and every request and response body uses JSON.
 
 ## Base URL
 
 All API requests are made to the following base URL:
 
-```
+```text
 https://api.pizzeriaco.com/v1
 ```
 
@@ -35,7 +37,7 @@ See the [Authentication guide](/authentication) for full details on key scopes, 
 Set the `Content-Type` header to `application/json` on all requests that include a body (`POST`, `PUT`). Requests without a body (e.g. `GET`, `DELETE`) do not require this header.
 
 | Method | Purpose |
-|--------|---------|
+| --- | --- |
 | `GET` | Retrieve a resource or list of resources |
 | `POST` | Create a resource or trigger an action |
 | `PUT` | Update an existing resource |
@@ -60,7 +62,7 @@ Every response body is a JSON object. Successful list responses wrap results in 
 List endpoints support cursor-based pagination via two query parameters:
 
 | Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
+| --- | --- | --- | --- |
 | `limit` | integer | `20` | Number of results to return. Maximum is `100`. |
 | `cursor` | string | — | Cursor value from the previous response's `next_cursor` field. |
 
@@ -75,7 +77,7 @@ The response includes a `next_cursor` field. When its value is `null`, you have 
 Every resource has a string ID prefixed with a short resource code. This makes it easy to identify a resource type at a glance, even outside the context of an API response.
 
 | Prefix | Resource |
-|--------|----------|
+| --- | --- |
 | `mch_` | Machine |
 | `rec_` | Recipe |
 | `run_` | Production run |
@@ -85,7 +87,7 @@ Every resource has a string ID prefixed with a short resource code. This makes i
 
 All timestamps in request and response bodies are formatted as [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) strings in UTC.
 
-```
+```text
 2024-05-14T09:32:00Z
 ```
 
