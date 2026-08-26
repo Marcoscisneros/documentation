@@ -28,44 +28,6 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Documentation",
-        "groups": [
-          {
-            "group": "Get Started",
-            "pages": [
-              "introduction",
-              "quickstart",
-              "authentication"
-            ]
-          },
-          {
-            "group": "Core Concepts",
-            "pages": [
-              "concepts/machines",
-              "concepts/recipes",
-              "concepts/production-runs",
-              "concepts/ingredients"
-            ]
-          },
-          {
-            "group": "Guides",
-            "pages": [
-              "guides/create-recipe",
-              "guides/start-production",
-              "guides/monitor-machines",
-              "guides/manage-ingredients"
-            ]
-          },
-          {
-            "group": "Support",
-            "pages": [
-              "troubleshooting",
-              "faq"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "API Reference",
         "groups": [
           {
@@ -108,6 +70,44 @@
             "pages": [
               "api-reference/ingredients/list",
               "api-reference/ingredients/inventory"
+            ]
+          },
+          {
+            "group": "Get Started",
+            "pages": [
+              "quickstart",
+              "authentication",
+              "introduction"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/machines",
+              "concepts/recipes",
+              "concepts/production-runs",
+              "concepts/ingredients"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/create-recipe",
+              "guides/start-production",
+              "guides/monitor-machines",
+              "guides/manage-ingredients"
+            ]
+          },
+          {
+            "group": "Support",
+            "pages": [
+              "troubleshooting",
+              "faq"
             ]
           }
         ]
